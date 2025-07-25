@@ -1,0 +1,19 @@
+
+
+services:
+  db:
+    image: postgres:15
+    container_name: proyecto3d_db
+    restart: always
+    environment:
+      POSTGRES_DB: Proyecto3D        # 👈 Crea la base Proyecto3D
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Camaro123
+    ports:
+      - "5432:5432"                  # PostgreSQL fuera del contenedor en puerto 3000
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d  # 👈 Ejecuta scripts SQL al iniciar
+
+volumes:
+  db_data:

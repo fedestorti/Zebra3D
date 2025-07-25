@@ -1,0 +1,16 @@
+.encabezado {
+  background-color: #171717;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;       /* 🔥 Centra verticalmente */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  height: 30px;
+}
+
+.Logoinicial {
+  max-width: 120px;
+  height: auto;
+  display: block;
+  margin: 0;
+}
