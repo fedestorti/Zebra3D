@@ -29,82 +29,70 @@
 
 ---
 
- Estructura de Proyecto
+ ## 📁 Estructura de Proyecto(Zebra3D)
 
- mi-app-3d
+```text
+mi-app-3d
 │
-├──────── frontend/
-│            ├── node_modules
-│            │
-│            ├── public/
-│            │       └── Fotos/
-│            │               └── Logo/
-│            │                       └── LogoIndividual.png          # Favicon y logos
-│            │
-│            ├── src/
-│            │   ├── components/                                     # Componentes reutilizables
-│            │   │       └── Header/           
-│            │   │               ├── Header.css
-│            │   │               └── Header.jsx
-│            │   │
-│            │   ├── pages/                                          # Páginas completas
-│            │   │    ├── Register/
-│            │   │    │       ├── Register.jsx
-│            │   │    │       ├── RegisterForm.jsx
-│            │   │    │       └── Register.css
-│            │   │    └── Login/
-│            │   │            ├──
-│            │   │            ├──    
-│            │   │            └── 
-│            │   │
-│            │   │                                                                                                   │            │   ├── api.js                                          # Configuración de Axios u otros servicios
-│            │   ├── App.jsx                                         # Contenedor principal
-│            │   ├── main.jsx                                        # Punto de entrada
-│            │   └── index.css                                       # Estilos globales
-│            │
-│            ├── index.html                                          # Único HTML base de la app
-│            ├── package.json
-│            ├── package-lock.json
-│            ├── postcss.config.js
-│            ├── tailwind.config.js
-│            └── vite.config.js
-│            
-├──────── backend
-│            ├── node_modules
-│            ├── src/
-│            │    ├── controllers/
-│            │    │            ├── auth.controller.js 
-│            │    │            ├── disenos.controller.js
-│            │    │            └── usuarios.controller.js
-│            │    │
-│            │    ├── lib/
-│            │    │     ├── cloudinary.js
-│            │    │     └── multer.js
-│            │    │        
-│            │    ├── middlewares/
-│            │    │           └── auth.middleware.js
-│            │    │
-│            │    ├── models/
-│            │    │       ├── diseño.model.js
-│            │    │       └── usuario.model.js
-│            │    │
-│            │    ├── routes/
-│            │    │       ├── auth.routes.js
-│            │    │       ├── disenos.routes.js
-│            │    │       └── usuarios.routes.js
-│            │    │    
-│            │    │
-│            │    ├── config.js
-│            │    ├── db.js
-│            │    └── index.js
-│            │    
-│            ├── .env   
-│            ├── package-lock.json
-│            └── package.json   
-│    
+├── frontend/
+│   ├── node_modules/
+│   ├── public/
+│   │   └── Fotos/
+│   │       └── Logo/
+│   │           └── LogoIndividual.png          # Favicon y logos
+│   ├── src/
+│   │   ├── components/                         # Componentes reutilizables
+│   │   │   └── Header/
+│   │   │       ├── Header.css
+│   │   │       └── Header.jsx
+│   │   ├── pages/                              # Páginas completas
+│   │   │   ├── Register/
+│   │   │   │   ├── Register.jsx
+│   │   │   │   ├── RegisterForm.jsx
+│   │   │   │   └── Register.css
+│   │   │   └── Login/
+│   │   │       ├── Login.jsx
+│   │   │       ├── LoginForm.jsx
+│   │   │       └── Login.css
+│   │   ├── api.js                              # Configuración de Axios u otros servicios
+│   │   ├── App.jsx
+│   │   ├── main.jsx
+│   │   └── index.css
+│   ├── index.html
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   └── vite.config.js
+│
+├── backend/
+│   ├── node_modules/
+│   ├── src/
+│   │   ├── controllers/
+│   │   │   ├── auth.controller.js 
+│   │   │   ├── disenos.controller.js
+│   │   │   └── usuarios.controller.js
+│   │   ├── lib/
+│   │   │   ├── cloudinary.js
+│   │   │   └── multer.js
+│   │   ├── middlewares/
+│   │   │   └── auth.middleware.js
+│   │   ├── models/
+│   │   │   ├── diseño.model.js
+│   │   │   └── usuario.model.js
+│   │   ├── routes/
+│   │   │   ├── auth.routes.js
+│   │   │   ├── disenos.routes.js
+│   │   │   └── usuarios.routes.js
+│   │   ├── config.js
+│   │   ├── db.js
+│   │   └── index.js
+│   ├── .env
+│   ├── package.json
+│   └── package-lock.json
+│
 ├── init/
-│      └── init.sql
-│
+│   └── init.sql
 ├── docker-compose.yml
 ├── iniciar_proyecto.bat
 └── README.md
