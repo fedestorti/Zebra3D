@@ -1,0 +1,51 @@
+.boton-zebra {
+  padding: 12px;
+  font-size: 1rem;
+  background-color: #3586ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  transition: background 0.3s ease;
+}
+
+.boton-zebra.enviando {
+  background-color: transparent; /* ❌ Quita el azul durante la animación */
+  color: #333;
+}
+
+
+/* Fondo animado cebra en estado .enviando */
+.boton-zebra.enviando::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background-image: url("ZebraBoton.jpg");
+  background-size: cover;
+  background-repeat: repeat;
+  animation: mover-cebra 12s linear infinite;
+  z-index: -1;
+  opacity: 1;
+  border-radius: 6px;
+}
+
+@keyframes mover-cebra {
+  from {
+    transform: translateX(0%);
+  }
+  to {
+    transform: translateX(-66%);
+  }
+}
+
+/* Hover para cuando no está enviando */
+.boton-zebra:hover:not(.enviando) {
+  background-color: #000000;
+}
