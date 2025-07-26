@@ -1,0 +1,33 @@
+# Node.js
+node_modules/
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / dist
+dist/
+build/
+
+# Logs
+logs/
+*.log
+
+# Vite cache
+.vite/
+
+# IDEs / Sistemas
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# PostgreSQL & Docker
+*.sql
+*.dump
+docker-compose.override.yml
+
+# Sistema operativo
+*.swp
+*~
