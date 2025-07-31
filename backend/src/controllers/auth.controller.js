@@ -1,29 +1,27 @@
+//src/controllers/auth.controller.js
 import bcrypt from 'bcryptjs';
+
 import jwt from 'jsonwebtoken';
 import pool from '../db.js';
 import { JWT_SECRET } from '../config.js';
 
-//----------------------------------------------------------------
 // Registro
 export const register = async (req, res) => {
-  const { apodo, nombre, apellido, email, contraseña, avatar_url, pais } = req.body;
+  const { apodo, nombre, apellido, email, contrasena, pais } = req.body;
 
   try {
-    // Validar campos obligatorios
-    if (!apodo || !nombre || !apellido || !email || !contraseña) {
-      return res.status(400).json({ error: 'Todos los campos obligatorios deben estar completos' });
-    }
-
-    // Encriptar contraseña
+    // 🔒 Encriptar contraseña
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(contraseña, salt);
+    const hashedPassword = await bcrypt.hash(contrasena, salt);
 
-    // Insertar en DB
+    // 🌩️ Obtener URL del avatar desde Cloudinary (o usar default)
+    const avatar_url = req.file?.path || 'https://res.cloudinary.com/demo/image/upload/v123456/avatar-default.png';
+
     const result = await pool.query(
       `INSERT INTO usuarios (apodo, nombre, apellido, email, contrasena, avatar_url, pais)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
        RETURNING id_usuario`,
-      [apodo, nombre, apellido, email, hashedPassword, avatar_url, pais]  // 👈 este array es necesario
+      [apodo, nombre, apellido, email, hashedPassword, avatar_url, pais]
     );
 
     res.status(201).json({ message: '✅ Usuario registrado con éxito', id: result.rows[0].id_usuario });
@@ -36,39 +34,54 @@ export const register = async (req, res) => {
   }
 };
 //----------------------------------------------------------------
-// Login
+// Login 
 export const login = async (req, res) => {
-  const { email, contraseña } = req.body;
+  const { email, contrasena } = req.body;
+  console.log('📨 Datos recibidos en login:', { email, contrasena });
 
   try {
-    const normalizedEmail = email.toLowerCase(); // 👈 Forzar minúsculas
+    const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ mensaje: 'Email no registrado' });
+    }
+
+    const usuario = result.rows[0];
+    console.log('🧠 Usuario encontrado:', usuario);
+
+    const coincide = await bcrypt.compare(contrasena, usuario.contrasena); // 👈 campo correcto
+
+    if (!coincide) {
+      return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    }
+
+    const token = jwt.sign({ id_usuario: usuario.id_usuario }, process.env.JWT_SECRET, {
+      expiresIn: '365d'
+    });
+
+    res.json({ token });
+  } catch (error) {
+    console.error('❌ Error en login:', error.message);
+    res.status(500).json({ mensaje: 'Error interno del servidor' });
+  }
+};
+
+export const obtenerPerfil = async (req, res) => {
+  try {
+    const { id_usuario } = req.usuario;
 
     const result = await pool.query(
-      'SELECT * FROM usuarios WHERE LOWER(email) = LOWER($1)',
-      [normalizedEmail]
+      'SELECT id_usuario,apodo, avatar_url, email FROM usuarios WHERE id_usuario = $1',
+      [id_usuario]
     );
 
     if (result.rows.length === 0) {
-      return res.status(400).json({ error: 'Usuario no encontrado' });
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
     }
 
-    const user = result.rows[0];
-    const validPassword = await bcrypt.compare(contraseña, user.contraseña);
-    if (!validPassword) {
-      return res.status(400).json({ error: 'Contraseña incorrecta' });
-    }
-
-    // 🔥 Firmar el token con el campo correcto
-    const token = jwt.sign(
-      { id_usuario: user.id_usuario, email: user.email },
-      JWT_SECRET,
-      { expiresIn: '1h' }
-    );
-
-    res.json({ message: '✅ Login exitoso', token });
+    res.json(result.rows[0]);
   } catch (error) {
-    console.error('❌ Error al iniciar sesión:', error);
-    res.status(500).json({ error: 'Error al iniciar sesión' });
+    res.status(500).json({ mensaje: 'Error del servidor' });
   }
 };
 

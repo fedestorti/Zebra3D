@@ -1,0 +1,21 @@
+  .pagina-principal {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 2rem;
+    box-sizing: border-box;
+    background-color: #0f0f0f;
+    padding-top: 100px;
+  }
+  
+  .banner {
+    margin: 2rem auto;
+    text-align: center;
+    background: #1a1a1a;
+    padding: 2rem;
+    border-radius: 12px;
+    color: white;
+    max-width: 100%;
+  }
+  

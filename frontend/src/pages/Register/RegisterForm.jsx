@@ -1,10 +1,21 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import API from '../../api';
 import './Register.css';
 import BotonZebra from '../../components/BotonZebra/BotonZebra';
 import ReCAPTCHA from "react-google-recaptcha";
+import { useNavigate } from 'react-router-dom';
+
 
 export default function RegisterForm() {
+
+  useEffect(() => {
+    const header = document.querySelector('.encabezado'); // clase del <header>
+    if (header) header.style.display = 'none';
+  
+    return () => {
+      if (header) header.style.display = '';
+    };
+  }, []);
 
 //-----------------------------------------------------------
 const [form, setForm] = useState({
@@ -47,6 +58,31 @@ const [form, setForm] = useState({
     }
   };
 
+
+//-----------------------------------------------------------
+  const resetFormulario = () => {
+    setForm({
+      apodo: '',
+      nombre: '',
+      apellido: '',
+      email: '',
+      contraseña: '',
+      confirmarContraseña: '',
+      avatar: null,
+      pais: ''
+    });
+  
+    setErrorPassword('');
+    setErrorConfirmacion('');
+    setEmailValido(true);
+    setAvatarPreview(null);
+    setCaptchaValido(false);
+    setIntentoEnvio(false);
+  
+    // Resetear el CAPTCHA visualmente
+    captchaRef.current?.reset();
+  };
+
 //-----------------------------------------------------------
   const validarEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -74,74 +110,134 @@ const [form, setForm] = useState({
   
 //-----------------------------------------------------------
 const [intentoEnvio, setIntentoEnvio] = useState(false);
+const [avatarPreview, setAvatarPreview] = useState(null); // vista previa
+const fileInputRef = useRef(null);
+const navigate = useNavigate();
 
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  setMensaje('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // 🧪 Validaciones básicas
+  if (
+    !form.nombre.trim() ||
+    !form.apellido.trim() ||
+    !form.email.trim() ||
+    !form.contraseña.trim() ||
+    !form.confirmarContraseña.trim()
+  ) {
+    setMensaje("⚠️ Completá todos los campos obligatorios.");
+    return;
+  }
 
-    setMensaje('');
+  if (errorPassword || errorConfirmacion || !emailValido) {
+    setMensaje("⚠️ Revisá los errores en el formulario.");
+    return;
+  }
 
-    if (
-      !form.nombre.trim() ||
-      !form.apellido.trim() ||
-      !form.email.trim() ||
-      !form.contraseña.trim() ||
-      !form.confirmarContraseña.trim()
-    ) {
-      setMensaje("⚠️ Completá todos los campos obligatorios.");
-      return;
+  if (!captchaValido) {
+    setMensaje("⚠️ Tenés que completar el reCAPTCHA.");
+    return;
+  }
+
+  if (!form.avatar) {
+    setMensaje("⚠️ Tenés que seleccionar una imagen de avatar.");
+    return;
+  }
+
+  setIntentoEnvio(true);
+  setEnviando(true);
+
+  try {
+    const { confirmarContraseña, avatar, contraseña, ...resto } = form;
+
+    // 🔁 Renombramos contraseña → contrasena
+    const usuario = {
+      ...resto,
+      contrasena: contraseña
+    };
+
+    const formData = new FormData();
+    for (const key in usuario) {
+      formData.append(key, usuario[key]);
     }
+    formData.append('avatar', avatar); // ✅ Campo correcto para Multer
 
-    if (errorPassword || errorConfirmacion || !emailValido) {
-      setMensaje("⚠️ Revisá los errores en el formulario.");
-      return;
-    }
+    // 📡 Enviar solicitud
+    const res = await API.post('/auth/register', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
 
-    setIntentoEnvio(true);
+    // 🧹 Limpiar formulario
+    setForm({
+      nombre: '',
+      apellido: '',
+      email: '',
+      contraseña: '',
+      confirmarContraseña: '',
+      avatar: null
+    });
+    
+    setAvatarPreview(null);
+    resetFormulario();
 
-    if (!captchaValido) {
-      setMensaje("⚠️ Tenés que completar el reCAPTCHA.");
-      return;
-    }
+    setTimeout(() => {
+      setMensaje(res.data.message || '✅ Usuario registrado con éxito');
+      setEnviando(false);
+    }, 2500);
 
-    setEnviando(true);
+  } catch (error) {
+    console.error('🔴 Error completo:', error.response?.data);
 
-    try {
-      const { confirmarContraseña, ...usuario } = form;
-      const res = await API.post('/auth/register', usuario);
+    const mensajeError = error.response?.data?.error;
+    const texto = mensajeError === 'El email ya está registrado'
+      ? '❌ Este correo ya está registrado. Probá con otro.'
+      : mensajeError || '❌ Error al registrar usuario';
 
-      setForm({
-        nombre: '',
-        apellido: '',
-        email: '',
-        contraseña: '',
-        confirmarContraseña: ''
-      });
-
-      setTimeout(() => {
-        setMensaje(res.data.message || '✅ Usuario registrado con éxito');
-        setEnviando(false);
-      }, 2500);
-    } catch (error) {
-      console.error('🔴 Error completo:', error.response?.data);
-
-      const mensajeError = error.response?.data?.error;
-      const texto = mensajeError === 'El email ya está registrado'
-        ? '❌ Este correo ya está registrado. Probá con otro.'
-        : mensajeError || '❌ Error al registrar usuario';
-
-      setTimeout(() => {
-        setMensaje(texto);
-        setEnviando(false);
-      }, 2500);
-    }
-  };
+    setTimeout(() => {
+      setMensaje(texto);
+      setEnviando(false);
+    }, 2500);
+  }
+};
 
 //-----------------------------------------------------------  
   return (
     <div className="register-container">
+      <button className="flecha-volver" onClick={() => navigate('/principal')} aria-label="Volver">
+       ❮
+      </button>
       <h2 className="register-title">Inscripción</h2>
       <form onSubmit={handleSubmit} className="register-form">
+
+    <div className="avatar-preview-wrapper">
+        <div
+          className="avatar-preview-circle"
+          onClick={() => fileInputRef.current.click()}
+          title="Cambiar avatar"
+        >
+          {avatarPreview ? (
+            <img src={avatarPreview} alt="Avatar" className="avatar-img" />
+            ) : (
+            <span className="avatar-placeholder">📷</span>
+          )}
+        </div>
+
+        <input
+          type="file"
+          name="avatar"
+          accept="image/*"
+          ref={fileInputRef}
+          style={{ display: 'none' }}
+          onChange={(e) => {
+            const file = e.target.files[0];
+            if (file) {
+              setForm({ ...form, avatar: file });
+              setAvatarPreview(URL.createObjectURL(file));
+            }
+          }}
+        />
+    </div>
         <input
           type="text"
           name="nombre"
@@ -165,13 +261,6 @@ const [intentoEnvio, setIntentoEnvio] = useState(false);
           value={form.apodo}
           onChange={handleChange}
           required
-        />
-        <input
-          type="text"
-          name="avatar_url"
-          placeholder="URL del avatar (opcional)"
-          value={form.avatar_url}
-          onChange={handleChange}
         />
         <input
           type="text"
@@ -216,7 +305,6 @@ const [intentoEnvio, setIntentoEnvio] = useState(false);
         {errorConfirmacion && (
           <p className="register-error fade-in">{errorConfirmacion}</p>
         )}
-
         <div className="recaptcha-container">
           <ReCAPTCHA
             sitekey="6LcUII8rAAAAAJ3BXW9sbG0ZIqD4pEFgaVj8v5kN"
@@ -228,7 +316,7 @@ const [intentoEnvio, setIntentoEnvio] = useState(false);
           />
           </div>
 
-            {mensaje && <p className="register-message fade-in">{mensaje}</p>}
+          {mensaje && <p className="register-message fade-in">{mensaje}</p>}
         
 
         <BotonZebra
@@ -237,8 +325,6 @@ const [intentoEnvio, setIntentoEnvio] = useState(false);
           style={{ width: '100%' }}
         />
       </form>
-
-      
     </div>
   );
 }

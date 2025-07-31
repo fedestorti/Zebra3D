@@ -1,17 +1,29 @@
-import express from 'express';
-import { subirDiseno } from '../controllers/disenos.controller.js';
+import { Router } from 'express';
 import { verificarToken } from '../middlewares/auth.middleware.js';
-import { uploadImagen, uploadArchivo3D } from '../lib/multer.js';
+import { uploadDiseno }      from '../middlewares/uploadDiseno.js';
+import { crearDiseno, obtenerDisenosConImagenes } from '../controllers/disenos.controller.js';
 
-const router = express.Router();
+const router = Router();
 
-// 👇 Ruta para subir un diseño
+// GET /api/disenos
+router.get('/', obtenerDisenosConImagenes);
+
+// POST /api/disenos
 router.post(
   '/',
   verificarToken,
-  uploadImagen.single('imagen_portada'),  // 📸 Sube portada a Cloudinary
-  uploadArchivo3D.single('archivo_3d'),  // 📦 Sube archivo 3D a Cloudinary
-  subirDiseno
+  (req, res, next) => {
+    console.log('📥 Paso 1: Token verificado. Usuario:', req.usuario);
+    next();
+  },
+  uploadDiseno,
+  (req, res, next) => {
+    console.log('📥 Paso 2: Archivos procesados por Multer');
+    console.log('🖼️ req.files:', req.files);
+    console.log('📎 req.body:', req.body);
+    next();
+  },
+  crearDiseno
 );
 
 export default router;

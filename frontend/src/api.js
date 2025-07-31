@@ -1,3 +1,4 @@
+//frontend/src/api.js
 import axios from 'axios';
 
 const API = axios.create({
@@ -5,3 +6,21 @@ const API = axios.create({
 });
 
 export default API;
+
+export async function obtenerPerfilUsuario() {
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) throw new Error('Token no encontrado');
+
+    const res = await API.get('/auth/perfil', {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error('❌ Error al obtener el perfil del usuario:', error);
+    throw error;
+  }
+}

@@ -20,9 +20,11 @@ CREATE TABLE IF NOT EXISTS disenos (
     titulo VARCHAR(100) NOT NULL,
     descripcion TEXT,
     archivo_url TEXT NOT NULL,
-    imagen_portada TEXT,
     precio NUMERIC(10,2) DEFAULT 0.00,
     fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    categoria VARCHAR(100),
+    etiqueta VARCHAR(100),
+    parametros_fabricacion TEXT,
     id_usuario INT NOT NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
@@ -58,4 +60,11 @@ CREATE TABLE IF NOT EXISTS pagos_plataforma (
     estado_pago VARCHAR(20) DEFAULT 'pendiente', -- pagado, fallido, retenido
     metodo_pago VARCHAR(50),
     FOREIGN KEY (id_compra) REFERENCES compras(id_compra) ON DELETE CASCADE
+);
+
+--  Tabla de Imagenes de diseños
+CREATE TABLE IF NOT EXISTS imagenes_diseno (
+    id_imagen SERIAL PRIMARY KEY,
+    id_diseno INT NOT NULL REFERENCES disenos(id_diseno) ON DELETE CASCADE,
+    url_imagenes TEXT NOT NULL 
 );

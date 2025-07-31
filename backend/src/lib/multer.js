@@ -1,14 +1,14 @@
 import multer from 'multer';
-import { storageImagenes, storageArchivos3D } from './cloudinary.js';
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { v2 as cloudinary } from 'cloudinary';
 
-// 🎨 Multer para imagen de portada
-export const uploadImagen = multer({ storage: storageImagenes });
+// 📁 Avatares
+const storageAvatar = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'avatars',
+    allowed_formats: ['jpg', 'jpeg', 'png']
+  }
+});
 
-// 📦 Multer para archivo 3D
-export const uploadArchivo3D = multer({ storage: storageArchivos3D });
-
-// 📂 Multer combinado para ambos campos
-export const uploadAmbos = multer().fields([
-  { name: 'imagen_portada', maxCount: 1 },
-  { name: 'archivo_3d', maxCount: 1 }
-]);
+export const uploadImagen = multer({ storage: storageAvatar }).single('avatar');

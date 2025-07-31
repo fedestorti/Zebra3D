@@ -3,7 +3,6 @@ import cors from 'cors';
 import { PORT } from './config.js';
 
 import authRoutes from './routes/auth.routes.js';
-import usuariosRoutes from './routes/usuarios.routes.js';
 import disenosRoutes from './routes/disenos.routes.js';
 import { cloudinary } from './lib/cloudinary.js';
 
@@ -13,11 +12,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+
 // Rutas
 app.use('/api/auth', authRoutes);
-app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/disenos', disenosRoutes);
-
+app.use((err, req, res, next) => {
+  console.error('🔥 Middleware global de errores:', err);
+  res.status(500).json({ error: 'Error inesperado del servidor' });
+});
 app.get('/', (req, res) => {
   res.send('🚀 Backend Proyecto3D funcionando!');
 });
