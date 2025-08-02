@@ -23,27 +23,42 @@ Zebra3D es una aplicación web full-stack desarrollada para mostrar, registrar y
 📁Estructura de Proyecto(Zebra3D)
 mi-app-3d
 │
-├── frontend/
-│   ├── node_modules/
-│   ├── public/
-│   │   └── Fotos/
-│   │       └── Logo/
-│   │           └── LogoIndividual.png          # Favicon y logos
-│   ├── src/
-│   │   ├── components/                         # Componentes reutilizables
-│   │   │   └── Header/
-│   │   │       ├── Header.css
-│   │   │       └── Header.jsx
-│   │   ├── pages/                              # Páginas completas
-│   │   │   ├── Register/
+├── frontend
+│   ├── node_modules
+│   ├── public
+│   │   └── Fotos
+│   │       └── Logo
+│   │           └── LogoIndividual.png
+│   ├── src
+│   │   ├── components
+│   │   │   ├── Header
+│   │   │   │   ├── Header.css
+│   │   │   │   └── Header.jsx
+│   │   │   └── TarjetaDiseno
+│   │   │       ├── TarjetaDiseno.css
+│   │   │       └── TarjetaDiseno.jsx
+│   │   ├── pages
+│   │   │   ├── Register
 │   │   │   │   ├── Register.jsx
 │   │   │   │   ├── RegisterForm.jsx
 │   │   │   │   └── Register.css
-│   │   │   └── Login/
-│   │   │       ├── Login.jsx
-│   │   │       ├── LoginForm.jsx
-│   │   │       └── Login.css
-│   │   ├── api.js                              # Configuración de Axios u otros servicios
+│   │   │   ├── Login
+│   │   │   │   ├── Login.jsx
+│   │   │   │   ├── LoginForm.jsx
+│   │   │   │   └── Login.css
+│   │   │   ├── PagePrincipal
+│   │   │   │   ├── PagePrincipalForm.jsx
+│   │   │   │   └── PagePrincipal.css
+│   │   │   ├── Disenos
+│   │   │   │   ├── DisenosForm.jsx
+│   │   │   │   └── Disenos.css
+│   │   │   ├── DisenoDetalle
+│   │   │   │   └── (archivos de detalle)
+│   │   │   ├── Tusdisenos
+│   │   │   │   └── (archivos de tus diseños)
+│   │   │   └── Ajustes
+│   │   │       └── AjustesForm.jsx
+│   │   ├── api.js
 │   │   ├── App.jsx
 │   │   ├── main.jsx
 │   │   └── index.css
@@ -54,22 +69,25 @@ mi-app-3d
 │   ├── tailwind.config.js
 │   └── vite.config.js
 │
-├── backend/
-│   ├── node_modules/
-│   ├── src/
-│   │   ├── controllers/
-│   │   │   ├── auth.controller.js 
+├── backend
+│   ├── node_modules
+│   ├── src
+│   │   ├── controllers
+│   │   │   ├── auth.controller.js
 │   │   │   ├── disenos.controller.js
 │   │   │   └── usuarios.controller.js
-│   │   ├── lib/
+│   │   ├── lib
 │   │   │   ├── cloudinary.js
+│   │   │   ├── upload.js
+│   │   │   ├── cloudinaryUpload.js
 │   │   │   └── multer.js
-│   │   ├── middlewares/
-│   │   │   └── auth.middleware.js
-│   │   ├── models/
+│   │   ├── middlewares
+│   │   │   ├── auth.middleware.js
+│   │   │   └── uploadAvatarMemory.js
+│   │   ├── models
 │   │   │   ├── diseño.model.js
 │   │   │   └── usuario.model.js
-│   │   ├── routes/
+│   │   ├── routes
 │   │   │   ├── auth.routes.js
 │   │   │   ├── disenos.routes.js
 │   │   │   └── usuarios.routes.js
@@ -80,7 +98,7 @@ mi-app-3d
 │   ├── package.json
 │   └── package-lock.json
 │
-├── init/
+├── init
 │   └── init.sql
 ├── docker-compose.yml
 ├── iniciar_proyecto.bat
