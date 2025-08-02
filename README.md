@@ -21,8 +21,8 @@ Zebra3D es una aplicación web full-stack desarrollada para mostrar, registrar y
 🔐 Seguridad con JWT en rutas privadas
 
 📁Estructura de Proyecto(Zebra3D)
+```plaintext
 mi-app-3d
-│
 ├── frontend
 │   ├── node_modules
 │   ├── public
