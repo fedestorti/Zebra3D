@@ -103,3 +103,17 @@ mi-app-3d
 ├── docker-compose.yml
 ├── iniciar_proyecto.bat
 └── README.md
+
+Cloudinary
+└── usuarios
+    ├── {apodo_de_usuario_1}
+    │   ├── avatar              # Imagen de avatar (single)
+    │   ├── imagenes_diseno     # Hasta 5 imágenes por diseño
+    │   └── archivos_3d         # Modelos .stl/.obj subidos
+    ├── {apodo_de_usuario_2}
+    │   ├── avatar
+    │   ├── imagenes_diseno
+    │   └── archivos_3d
+    └── {etc…}
+
+
