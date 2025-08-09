@@ -66,5 +66,27 @@ CREATE TABLE IF NOT EXISTS pagos_plataforma (
 CREATE TABLE IF NOT EXISTS imagenes_diseno (
     id_imagen SERIAL PRIMARY KEY,
     id_diseno INT NOT NULL REFERENCES disenos(id_diseno) ON DELETE CASCADE,
-    url_imagenes TEXT NOT NULL 
+    url_imagenes TEXT NOT NULL,
+    orden INTEGER NOT NULL DEFAULT 0
+);
+
+-- Crea la tabla de seguidores
+-- en tu SQL de migrations o directamente en la base de datos
+CREATE TABLE IF NOT EXISTS seguidores (
+  id_seguidor   SERIAL PRIMARY KEY,
+  id_usuario    INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  id_seguido    INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  fecha_seguido TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (id_usuario, id_seguido)
+);
+
+
+-- 1️⃣ Creamos la tabla de reseñas
+CREATE TABLE IF NOT EXISTS resenas (
+  id_resena     SERIAL PRIMARY KEY,
+  id_usuario    INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  id_calificado INT NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  calificacion  SMALLINT NOT NULL CHECK (calificacion BETWEEN 1 AND 5),
+  fecha         TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (id_usuario, id_calificado)
 );
