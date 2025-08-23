@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:15
+    container_name: proyecto3d_db
+    restart: always
+    environment:
+      POSTGRES_DB: Proyecto3D
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Camaro123
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+
+volumes:
+  db_data:

@@ -1,0 +1,105 @@
+abrir bash desde powershell
+& "D:\Git\bin\bash.exe"
+
+notebook
+& "C:\Program Files\Git\bin\bash.exe"
+---------------------------------------------------
+arranque
+npm run dev
+
+
+---------------------------------------------------
+entrar a la base de datos 
+docker exec -it proyecto3d_db psql -U postgres -d Proyecto3D
+
+lista de tablas 
+\dt
+
+traer los datos que quiero
+SELECT * FROM nombre_tabla;
+
+salir de la Base
+\q
+
+---------------------------------------------------
+entrar a la base desde navegador
+http://localhost:8080/browser/
+
+Email: admin@admin.com
+Password: admin
+
+---------------------------------------------------
+entrar 
+http://localhost:5173/principal
+
+---------------------------------------------------
+git config --global user.name "Federico Storti"
+git config --global user.email "fede@example.com"
+
+---------------------------------------------------
+Presentación de Servicio de Impresión 3D Colaborativo
+1. Introducción
+
+Cada usuario puede registrarse como proveedor de impresión 3D.
+
+Otros usuarios cargan sus modelos 3D (STL, OBJ, etc.) y solicitan la impresión.
+
+El sistema conecta necesidad con capacidad, simplificando el acceso a la manufactura aditiva.
+
+2. Problema Actual
+
+Muchos usuarios no tienen impresora 3D, pero sí diseños listos.
+
+Los que sí tienen impresora, suelen tener tiempos muertos en sus máquinas.
+
+Falta un lugar centralizado que conecte estas dos puntas.
+
+3. Solución
+
+Una plataforma de servicios donde:
+
+Cualquier usuario con impresora puede ofrecer impresiones.
+
+Los clientes suben archivos, eligen material, color y cantidad.
+
+El sistema muestra precios, tiempos y valoraciones de cada impresor.
+
+Modelo peer-to-peer, descentralizado y flexible.
+
+4. Beneficios
+
+Democratización de la impresión 3D.
+
+Escalabilidad sin que la plataforma tenga que comprar máquinas.
+
+Oportunidad de ingreso para makers y emprendedores.
+
+Rápida entrega gracias a la cercanía geográfica entre usuario e impresor.
+
+5. Flujo del Usuario
+
+Cliente sube el archivo 3D → selecciona opciones → solicita presupuesto.
+
+Proveedor recibe la notificación → acepta/rechaza el trabajo.
+
+El sistema gestiona pagos y envíos de manera segura.
+
+Ambos dejan reseñas para fomentar confianza.
+
+6. Modelo de Negocio
+
+Comisión por cada impresión gestionada.
+
+Suscripciones premium para impresores (mayor visibilidad, herramientas extra).
+
+Posible integración con venta de materiales.
+
+7. Ejemplo Visual
+
+Podés mostrar mockups de:
+
+Pantalla para subir archivo.
+
+Listado de proveedores con precios/valoraciones.
+
+Perfil de un proveedor (con foto de impresora, materiales disponibles, etc.).

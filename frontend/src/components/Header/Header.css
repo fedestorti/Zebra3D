@@ -1,0 +1,129 @@
+.encabezado {
+  background-color: #171717;
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap; /* 🔥 Permite que se acomoden si no entra */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 999;
+}
+
+.Logoinicial {
+  max-width: 110px;
+  height: auto;
+  padding: 0 110px 0 20px;
+}
+
+/* 🔍 Buscador siempre centrado entre logo y botones */
+.buscador {
+  background-color: #212121;
+  border: 1px solid #444;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  color: white;
+  max-width: 400px;
+  min-width: 200px;
+  margin: 0 auto; /* ✅ Opcional si no hay justify-center */
+}
+
+.acciones {
+  display: flex;
+  gap: 1rem;
+  flex-shrink: 0;
+  padding-right: 10px;
+}
+
+.boton-principal {
+  padding: 10px 16px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+/* 📱 Responsive para pantallas pequeñas */
+
+
+.lado-izquierdo {
+  display: flex;
+  align-items: center;
+}
+
+.contenido-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/*Menu desplegable*/
+.usuario-dropdown {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.menu-desplegable {
+  position: absolute;    /* se posiciona dentro del header */
+  top: 45px;
+  right: 0;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  z-index: 100000;       /* alto, pero depende del header */
+}
+
+.menu-desplegable button {
+  background: none;
+  border: none;
+  color: white;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.menu-desplegable button:hover {
+  background-color: #333;
+}
+
+.menu-desplegable hr {
+  border: none;
+  border-top: 1px solid #555;
+  margin: 8px 0;
+}
+
+
+.usuario-mini {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 20px;
+  padding-right: 10px;
+}
+
+.flecha-abajo {
+  font-size: 10px;
+  color: #ffffff; /* o el color que combine con tu fondo */
+  transition: transform 0.2s ease;
+  padding-right: 3px;
+}
+
+/* Si querés que rote al desplegar un menú, podés agregar esta clase luego dinámicamente */
+.flecha-abajo.rotada {
+  transform: rotate(180deg);
+}
+.flecha-abajo:hover {
+  color: #2563eb; /* Cambia esto al color que desees al hacer hover */
+}

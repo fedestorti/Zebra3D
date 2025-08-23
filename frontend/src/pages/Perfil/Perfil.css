@@ -1,0 +1,260 @@
+/* Perfil.css */
+
+/* Contenedor principal */
+.main-container {
+  padding: 30px 16px 16px 16px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* HEADER */
+
+
+.profile-header2 {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; 
+  background: #121212;
+  color: white;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  min-height: 200px;
+  width: 100%;          /* ocupa el ancho disponible */
+  max-width: 1200px;    /* no se pasa de este valor */
+  margin: 0 auto;       /* centrado horizontal */
+}
+
+
+.profile-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+  margin-right: 1.5rem;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-username {
+  font-size: 1.875rem; /* text-3xl */
+  font-weight: bold;
+}
+
+.profile-button {
+  background: white;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background 0.2s;
+}
+.profile-button:hover {
+  background: #f3f4f6;
+}
+
+/* ESTRELLAS (StarRating) */
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.star-rating button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+.star-rating button:hover {
+  transform: scale(1.2);
+}
+
+.star-rating svg {
+  width: 24px;
+  height: 24px;
+  fill: #d1d5db; /* gray-300 */
+  transition: fill 0.2s ease;
+}
+
+.star-rating button.filled svg,
+.star-rating button:hover svg,
+.star-rating button:focus svg {
+  fill: #facc15; /* yellow-400 */
+}
+
+/* ESTADÍSTICAS */
+.profile-stats {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.75rem;
+}
+
+.profile-stats span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.profile-stats b {
+  font-size: 1.125rem; /* text-lg */
+}
+
+.profile-stats small {
+  font-size: 0.75rem; /* text-xs */
+  color: rgba(255,255,255,0.8);
+}
+
+/* BIOGRAFÍA */
+.profile-bio {
+  margin-top: 1rem;
+  color: #e5e7eb; /* gray-200 */
+}
+
+/* SECCIÓN DE DISEÑOS */
+.section-title {
+  margin: 2rem 0 1rem;
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 600;
+  color: #374151; /* gray-700 */
+}
+
+/* GALERÍA */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(5,1fr);
+  gap: 1rem;
+}
+
+/* TARJETA DE DISEÑO */
+.design-card {
+  background: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+}
+
+.design-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+
+.design-placeholder {
+  width: 100%;
+  height: 160px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+}
+
+.design-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #111827; /* gray-900 */
+  color: white;
+  padding: 0.5rem 0.75rem;
+}
+
+.design-title {
+  font-weight: 600;
+  font-size: 0.875rem; /* text-sm */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.design-price {
+  font-weight: 500;
+  font-size: 0.875rem;
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+  .profile-header2 {
+    flex-direction: column;
+    text-align: center;
+  }
+  .profile-avatar {
+    margin-right: 0;
+    margin-bottom: 1rem;
+  }
+  .profile-top {
+    justify-content: center;
+  }
+  .profile-stats {
+    justify-content: center;
+  }
+}
+
+
+/* modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+}
+
+.modal-content img {
+  width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.modal-close {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #fff;
+  border: none;
+  border-radius: 50%;
+  font-size: 20px;
+  cursor: pointer;
+  width: 30px;
+  height: 30px;
+}
+
+/* miniaturas */
+.thumbnails {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.thumb {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  cursor: pointer;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}

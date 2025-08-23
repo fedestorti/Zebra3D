@@ -1,0 +1,314 @@
+.formulario-diseno {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  width: 300px;
+}
+
+.pagina-disenos {
+padding-top: 50px;
+}
+
+.formulario-diseno input,
+.formulario-diseno textarea {
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  background-color: #666;
+  color: #fff;
+}
+input::placeholder,textarea::placeholder {
+  color: #ffffff91;       /* Cambia el color del placeholder */
+  opacity: 1;       /* Opcional: algunos navegadores hacen el placeholder más transparente por defecto */
+  font-style: italic; /* Opcional: cambiar estilo de letra */
+}
+
+.formulario-diseno button {
+  background-color: #3d3df5;
+  color: #fff;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mensaje {
+  font-weight: bold;
+  text-align: center;
+  font-weight: 600;
+}
+
+
+.preview-contenedor {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.preview-imagen {
+  width: 200px;
+  height: 200px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.galeria-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.imagen-grande {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 10px;
+}
+
+.flecha {
+  font-size: 3rem;
+  color: white;
+  cursor: pointer;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  user-select: none;
+}
+
+.flecha.izq {
+  left: 20px;
+}
+.flecha.der {
+  right: 20px;
+}
+
+.cerrar {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  font-size: 3rem;
+  color: white;
+  cursor: pointer;
+}
+
+.contenedor-diseno {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.preview-column {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-auto-rows: 172px;
+  grid-auto-flow: dense;
+  gap: 10px;  /* espacio entre cada wrapper */
+  width: 400px;
+}
+
+.preview-wrapper {
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  border: 1px solid #ccc;
+  display: flex;        /* mantiene la flexión interna si la necesitás */
+  flex-direction: column;
+  width: 100%;          /* antes estaba 150%, eso causaba superposición */
+  padding: 2px;
+}
+
+.preview-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* llena el cuadro */
+}
+
+.preview-wrapper.portada {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+
+
+
+.preview-imagen:hover {
+  transform: scale(1.05);
+  border-color: #007bff;
+}
+
+.boton-borrar {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  padding: 2px 6px;
+  color: rgb(255, 0, 0);
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.portada-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background-color: #28a745;
+  color: white;
+  padding: 4px 8px;
+  border-bottom-right-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: bold;
+  z-index: 2;
+}
+
+.titulo-seccion {
+ padding-top: 10px;
+ text-align: center;
+}
+
+textarea {
+  height: 160px;
+  resize: none;
+}
+
+
+.input-file-wrapper label {
+  display: inline-block;
+  padding: 10px 16px;
+  background-color: #ffffff;
+  color: #000;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 5px;
+  width: 91%;
+  text-align: center;
+  transition: background 0.3s ease;
+}
+
+.input-file-wrapper label:hover {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+
+
+
+
+
+
+.precio-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.precio-wrapper input.precio {
+  padding-left: 20px; /* espacio para el $ */
+  -webkit-appearance: textfield; /* Chrome/Safari */
+  -moz-appearance: textfield;    /* Firefox */
+  appearance: textfield;          /* estándar */
+  width: 68%;
+}
+
+.precio-wrapper input.precio::-webkit-inner-spin-button,
+.precio-wrapper input.precio::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.precio-wrapper::before {
+  content: '$';
+  position: absolute;
+  left: 8px;
+  top: 40%;
+  transform: translateY(-50%);
+  color: #ffffff;
+  font-weight: 600;
+  pointer-events: none; /* no interfiere con el input */
+}
+
+/* -------- Responsive -------- */
+@media (max-width: 768px) {
+  .contenedor-diseno {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .preview-column {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto;
+    max-width: 100%;
+    height: auto;
+    gap: 0.5rem;
+  }
+
+  .formulario-diseno {
+    max-width: 100%;
+    width: 90%;
+  }
+
+  .input-file-wrapper label {
+    width: 100%;
+  }
+
+  .precio-wrapper input.precio {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-column {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .preview-wrapper.portada {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+
+  .formulario-diseno {
+    width: 95%;
+  }
+
+  .preview-imagen {
+    height: 120px; /* un poco más alto para verse mejor en móvil */
+  }
+}
+
+
+
+
+.boton-portada {
+  position: absolute;
+  bottom: 2px;
+  left: 5px;
+  background-color: rgba(0, 86, 179, 0.9);
+  transform: scale(1.05);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  z-index: 2;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.boton-portada:hover {
+  background-color: rgba(0, 86, 179, 0.9);
+  transform: scale(1.05);
+}

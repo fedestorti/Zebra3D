@@ -1,0 +1,113 @@
+/* Galería */
+.galeria {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+/* Tarjeta */
+.tarjeta {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+
+.tarjeta-img-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.tarjeta-img {
+  width: 100%;
+  height: 210px;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.tarjeta:hover .tarjeta-img {
+  transform: scale(1.05);
+}
+
+/* Overlay (oculto por defecto) */
+.tarjeta-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 0.5rem 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(30, 30, 30, 0.6);
+  color: #fff;
+  font-size: 0.9rem;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: translateY(100%); /* empieza oculto abajo */
+}
+
+.tarjeta:hover .tarjeta-overlay {
+  opacity: 1;
+  transform: translateY(0); /* sube al pasar el mouse */
+}
+
+.tarjeta-titulo {
+  display: block;
+  max-width: 100px;
+  white-space: nowrap;       /* que no salte de línea */
+  overflow: hidden;          /* que oculte lo que sobra */
+  text-overflow: ellipsis;   /* que ponga los ... */
+}
+
+.tarjeta-titulo {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;     /* cantidad de líneas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.tarjeta-precio {
+  padding-right: 18px;
+  border-radius: 6px;
+  font-weight: bold;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .galeria {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .galeria {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .galeria {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+
+  .tarjeta-img {
+    height: 140px;
+  }
+}
+
+@media (max-width: 400px) {
+  .galeria {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta-img {
+    height: 160px;
+  }
+
+  .tarjeta-overlay {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+  }
+}
