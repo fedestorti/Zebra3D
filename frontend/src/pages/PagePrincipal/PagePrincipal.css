@@ -1,52 +1,60 @@
 /* PagePrincipal.css */
 
+/* ---------- LAYOUT GENERAL ---------- */
 .page-wrapper {
   display: flex;
-  flex-direction: column; /* apila card-servicio y galeria */
-  align-items: center;    /* centra todo horizontal */
+  flex-direction: column;
+  align-items: center;
+  padding: 0 16px;
 }
 
-/* Contenedor general de la galería */
+/* ---------- GALERÍAS ---------- */
 .galeria {
   display: flex;
-  flex-direction: column; /* apila título y tarjetas */
-  align-items: flex-start; /* alinea a la izquierda */
-  width: 1200px;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
   max-width: 1200px;
   gap: 16px;
+  margin: 20px 0;
 }
 
 .galeria2-tarjetas {
   display: grid;
-  grid-template-columns: repeat(5, 1fr); /* 5 columnas fijas */
-  gap: 16px;
-  width: 100%;
-}
-
-/* Galería fija 5x5 (otros diseños) */
-.grid-5x5 {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  grid-template-rows: repeat(5, auto); /* siempre 5 filas */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
+/* La fija 5x5 */
+.grid-5x5 {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  grid-template-rows: repeat(5, auto);
+  gap: 16px;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Título de otros diseños */
 .otros {
-  grid-column: 1 / -1; /* ocupa toda la fila */
+  grid-column: 1 / -1;
   font-size: 22px;
   font-weight: 600;
   text-align: center;
-  color: #fff;  
+  color: #fff;
   margin-bottom: 10px;
-  width: 1200px;
+  width: 100%;
   background-color: #1f1f1f;
   box-shadow: 0 4px 12px rgba(0,0,0,0.5);
   border-radius: 12px;
   padding: 10px 20px;
 }
 
+/* ---------- BUSCADOR ---------- */
 .buscador {
   position: fixed;
   top: 12px;
@@ -63,9 +71,14 @@
   width: 100%;
 }
 
+.input-container {
+  position: relative;
+  width: 100%;
+}
+
 .input-container input {
   width: 100%;
-  padding: 6px 10px 6px 30px; /* espacio a la izquierda para la lupa */
+  padding: 6px 10px 6px 30px;
   border-radius: 8px;
   border: none;
   outline: none;
@@ -76,7 +89,7 @@
 
 .input-container .lupa {
   position: absolute;
-  left: 20px;           /* la posicionamos a la izquierda */
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
@@ -84,21 +97,12 @@
   color: #222;
 }
 
-.input-container .lupa {
-  position: absolute;
-  right: 1px;
-  top: 48%;
-  transform: translateY(-50%);
-  pointer-events: none;
-  font-size: 16px;
-  color: #222; /* más oscuro que blanco */
-}
-
+/* ---------- CARD SERVICIO ---------- */
 .card-servicio-wrapper {
   width: 100%;
   display: flex;
   justify-content: center;
-  margin-top: 100px; /* <-- mueve la card entera hacia abajo */
+  margin-top: 100px;
 }
 
 .card-servicio {
@@ -106,18 +110,19 @@
   text-align: center;
   transition: transform 0.2s;
   border-radius: 10px;
-  width: 1200px;
-  height: 280px;
+  width: 100%;
+  max-width: 1200px;
+  aspect-ratio: 16/5; /* se adapta a ancho sin altura fija */
+  overflow: hidden;
 }
 
 .card-servicio img {
   width: 100%;
   height: 100%;
-  max-width: 400px;
   object-fit: contain;
 }
 
-/* Contenedor de filtros */
+/* ---------- FILTROS ---------- */
 .filtros {
   display: flex;
   flex-wrap: wrap;
@@ -126,68 +131,92 @@
   padding: 15px;
   border-radius: 12px;
   align-items: center;
-  width: 800px;
   justify-content: center;
+  width: 100%;
+  max-width: 800px;
   margin-top: 100px;
 }
 
-/* Checkboxes y labels */
 .filtros label {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   color: #fff;
   font-size: 14px;
   cursor: pointer;
   user-select: none;
-  transition: all 0.2s ease;
+  transition: color 0.2s ease;
 }
 
-.filtros input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #2563eb; /* color del check */
-  cursor: pointer;
-}
-
-/* Hover del label */
 .filtros label:hover {
   color: #2563eb;
 }
 
-.resultados-busqueda {
-  color: #fff;               /* texto blanco */
-  font-size: 22px;           /* tamaño visible */
-  font-weight: 600;          /* un poco más grueso */
-  text-align: center;        /* centrado */
-  background-color: #1f1f1f; /* fondo oscuro detrás del h1 */
-  padding: 10px 20px;        /* padding para que respire */
-  border-radius: 12px;       /* bordes redondeados */
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5); /* sombra sutil */
-  transition: all 0.3s ease; /* animación suave si cambia el número */
-  width: 1200px;
+.filtros input[type="checkbox"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  background-color: #2a2a2a;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
 }
 
-/* Opcional: cambiar color del número dinámicamente */
+.filtros input[type="checkbox"]:hover {
+  border-color: #2563eb;
+}
+
+.filtros input[type="checkbox"]:checked {
+  background-color: #2563eb;
+  border-color: #2563eb;
+}
+
+.filtros input[type="checkbox"]:checked::after {
+  content: "✔";
+  font-size: 14px;
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+}
+
+/* ---------- RESULTADOS ---------- */
+.resultados-busqueda {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  text-align: center;
+  background-color: #1f1f1f;
+  padding: 10px 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  transition: all 0.3s ease;
+  width: 100%;
+  max-width: 1200px;
+}
+
 .resultados-busqueda span {
-  color: #8b8b8b; /* color destacado para la cantidad de resultados */
+  color: #8b8b8b;
   font-weight: 700;
 }
 
 .sin-resultados {
-  width: 100%;         /* ocupa todo el ancho del contenedor */
-  text-align: left;    /* alinea el texto a la izquierda */
-  margin: 10px 0;      /* opcional, espacio arriba y abajo */
+  width: 100%;
+  text-align: left;
+  margin: 10px 0;
 }
 
+/* ---------- PAGINAS ---------- */
 .paginas {
   display: flex;
-  justify-content: center; /* centra horizontalmente */
-  align-items: center;     /* centra verticalmente si hay altura */
-  gap: 10px;               /* espacio entre botones y el span */
-  margin-left: 41%;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  
+  margin: 20px 0;
 }
 
 .paginas button {
@@ -203,7 +232,7 @@
 }
 
 .paginas button:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: #1e4fc2;
   transform: translateY(-2px);
 }
 
@@ -219,147 +248,56 @@
   color: #333;
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-  }
+/* ---------- MEDIA QUERIES ---------- */
 
-  .buscador {
-    top: 10px;
-    width: 40%;
-  }
-
-  .card-servicio  {
-    width: 100%;
-  }
-}
-
-
-@media (max-width: 1024px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .buscador {
-    top: 70px;
-    left: 48%;
-    width: 40%;
-  }
-
-  .card-servicio  {
-    width: 80%;
-    top: 12%;
-  }
-}
-
-@media (max-width: 768px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .buscador {
-    top: 70px;
-    left: 45.5%;
-    width: 60%;
-  }
-
-  .card-servicio  {
-    width: 80%;
-    top: 12%;
-  }
-
+/* Tablets y laptops chicas */
+@media (max-width: 992px) {
   .filtros {
+    width: 90%;
     flex-direction: column;
     align-items: flex-start;
   }
+  .buscador {
+    top: 60px;
+    width: 70%;
+  }
 }
 
+/* Tablets verticales */
+@media (max-width: 768px) {
+  .resultados-busqueda,
+  .otros {
+    font-size: 18px;
+  }
+  .buscador {
+    top: 70px;
+    width: 80%;
+  }
+}
+
+/* Celulares */
 @media (max-width: 480px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+  .resultados-busqueda,
+  .otros {
+    font-size: 16px;
   }
-
+  .filtros {
+    width: 300px;
+  }
   .buscador {
     top: 70px;
-    left: 45.5%;
-    width: 60%;
+    left: 195px;
+    width: 41%;
+    
+  }
+  .card-servicio {
+    width: 500px;
+    background-color: transparent;
   }
 
-  .card-servicio  {
-    width: 80%;
-    top: 12%;
-  }
-}
-
-@media (max-width: 320px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+  .galeria {
+    grid-template-columns: repeat(1, 1fr);
+    width: 350px;
   }
 
-  .buscador {
-    top: 120px;
-    left: 45.5%;
-    width: 60%;
-  }
-
-  .card-servicio  {
-    width: 80%;
-    margin-top: 70px;
-  }
-}
-
-@media (max-width: 200px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .buscador {
-    top: 70px;
-    left: 45.5%;
-    width: 60%;
-  }
-
-  .card-servicio  {
-    width: 80%;
-    top: 12%;
-  }
-}
-
-@media (max-width: 100px) {
-  .galeria,
-  .galeria2,
-  .grid-5x5 {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
-
-  .buscador {
-    top: 70px;
-    left: 45.5%;
-    width: 60%;
-  }
-
-  .card-servicio  {
-    width: 80%;
-    top: 12%;
-  }
 }

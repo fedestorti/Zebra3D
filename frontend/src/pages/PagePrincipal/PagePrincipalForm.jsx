@@ -14,7 +14,7 @@ export default function PagePrincipalForm() {
   const [paginaActualTodos, setPaginaActualTodos] = useState(1);
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
-  const filasPorPagina = 2;
+  const filasPorPagina = 10;
   const columnas = 5; // ajustar según tu CSS
   const itemsPorPagina = filasPorPagina * columnas;
 
@@ -137,7 +137,7 @@ export default function PagePrincipalForm() {
               {disenosPaginaTodos.map((d) => (
                 <TarjetaDiseno key={d.id_diseno} diseno={d} />
               ))}
-  </div>
+          </div>
               {totalPaginasTodos > 1 && (
                 <div className="paginas">
                     <button
