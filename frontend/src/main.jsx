@@ -17,9 +17,14 @@ import PagePrincipalForm from './pages/PagePrincipal/PagePrincipalForm.jsx';
 import Perfil from './pages/Perfil/Perfil.jsx';
 import DisenosForm from './pages/Disenos/DisenosForm.jsx';
 import DisenoDetalle from './pages/DisenoDetalle/DisenoDetalle.jsx';
+import Tusdisenos from './pages/Tusdisenos/TusdisenosForm.jsx';
 import ServicioImpresion from './pages/ServicioImpresion/ServicioImpresionForm.jsx';
+import CarritoPage from './pages/Carrito/CarritoPage.jsx';
+import CheckoutResult from './pages/Checkout/CheckoutResult.jsx';
+
 //context
 import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 
 // 📌 Rutas públicas
 const publicRoutes = [
@@ -29,15 +34,18 @@ const publicRoutes = [
   { path: 'login', element: <Login /> },
   { path: 'disenos/:id', element: <DisenoDetalle key={Date.now()} /> },
   { path: 'perfil/:apodo', element: <Perfil /> },
-  { path: 'servicio-impresion', element: <ServicioImpresion /> }
+  { path: 'servicio-impresion', element: <ServicioImpresion /> },
+  { path: 'carrito', element: <CarritoPage /> },
+  { path: 'pago/ok', element: <CheckoutResult /> },
+  { path: 'pago/error', element: <CheckoutResult /> },
+  { path: 'pago/pendiente', element: <CheckoutResult /> },
 ];
 
 // 🔐 Rutas privadas
 const privateRoutes = [
   { path: 'perfil/:apodo', element: <Perfil /> },
-  { path: 'disenos', element: <DisenosForm /> }
-  // { path: 'mensajes', element: <Mensajes /> },
-  // { path: 'descargas', element: <Descargas /> },
+  { path: 'disenos', element: <DisenosForm /> },
+  { path: 'tus-disenos', element: <Tusdisenos /> },
 ];
 
 // 📌 Router principal
@@ -49,19 +57,19 @@ const router = createBrowserRouter([
       ...publicRoutes,
       {
         element: <RutaProtegida />,
-        children: privateRoutes
-      }
-    ]
-  }
+        children: privateRoutes,
+      },
+    ],
+  },
 ]);
 
+// ✅ Render limpio
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <RouterProvider
-        router={router}
-        future={{ v7_startTransition: true }}
-      />
+      <CartProvider>
+        <RouterProvider router={router} future={{ v7_startTransition: true }} />
+      </CartProvider>
     </AuthProvider>
   </React.StrictMode>
 );

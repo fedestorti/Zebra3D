@@ -1,11 +1,18 @@
+// TarjetaDiseno.jsx
 import { Link } from "react-router-dom";
 import "./TarjetaDiseno.css";
+import useAddToCart from "../../hooks/useAddToCart";
 
 export default function TarjetaDiseno({ diseno }) {
+  const add = useAddToCart();
+
   const portada =
     diseno.imagenes && diseno.imagenes.length > 0
       ? diseno.imagenes[0]
-      : "/placeholder.jpg"; // imagen por defecto si no hay
+      : "/placeholder.jpg";
+
+  const precioFormateado =
+    Number(diseno.precio) === 0 ? "Gratis" : `${diseno.precio}`;
 
   return (
     <div className="tarjeta">
@@ -14,7 +21,7 @@ export default function TarjetaDiseno({ diseno }) {
           <img src={portada} alt={diseno.titulo} className="tarjeta-img" />
           <div className="tarjeta-overlay">
             <span className="tarjeta-titulo">{diseno.titulo}</span>
-            <span className="tarjeta-precio">{diseno.precio}</span>
+            <span className="tarjeta-precio">{precioFormateado}</span>
           </div>
         </div>
       </Link>

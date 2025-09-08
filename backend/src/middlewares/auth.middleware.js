@@ -1,27 +1,37 @@
+//auth.middleware.js
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config.js';
 
 export const verificarToken = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  console.log('🪪 Authorization Header:', authHeader);
-
-  if (!authHeader) {
-    return res.status(401).json({ error: '❌ No se proporcionó token' });
+  const authHeader = req.headers.authorization || "";
+  if (!authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "❌ No se proporcionó token" });
   }
+  const token = authHeader.slice(7);
 
-  const token = authHeader.split(' ')[1];
-  console.log('🔑 Token extraído:', token);
-
-  if (!token) {
-    return res.status(401).json({ error: '❌ Token faltante en Authorization' });
+  // Debug temporal
+  const parts = token.split(".");
+  if (parts.length !== 3) {
+    console.error("🟥 Token mal formado (partes):", parts.length);
+    return res.status(401).json({ error: "❌ Token inválido o mal formado" });
   }
+  const decodedLoose = jwt.decode(token, { complete: true });
+  if (!decodedLoose) {
+    console.error("🟥 jwt.decode devolvió null (base64 roto)");
+    return res.status(401).json({ error: "❌ Token inválido o mal formado" });
+  }
+  // Fin debug
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.usuario = decoded; // ✅ CAMBIO ACÁ
+    if (!decoded?.id_usuario) {
+      console.error("🟥 Token sin id_usuario en payload:", decoded);
+      return res.status(401).json({ error: "❌ Token inválido o mal formado" });
+    }
+    req.user = decoded;
     next();
-  } catch (error) {
-    console.error('❌ Error al verificar token:', error);
-    return res.status(401).json({ error: '❌ Token inválido o mal formado' });
+  } catch (e) {
+    console.error("🟥 jwt.verify error:", e.message);
+    return res.status(401).json({ error: "❌ Token inválido o mal formado" });
   }
 };

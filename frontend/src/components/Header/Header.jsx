@@ -1,16 +1,18 @@
 // frontend/src/components/Header/Header.jsx
 import './Header.css';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 
 export default function Header() {
   const { usuario, logout } = useAuth();
+  const { cart } = useCart();
   const navigate = useNavigate();
   const [mostrarMenu, setMostrarMenu] = useState(false);
+  const menuRef = useRef(null);
 
   const toggleMenu = () => setMostrarMenu(!mostrarMenu);
-  const menuRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -25,33 +27,42 @@ export default function Header() {
     };
   }, []);
 
+  const cantidadItems = cart.items.reduce((acc, item) => acc + item.qty, 0);
+
   return (
     <header className="encabezado">
       <div className="lado-izquierdo">
-  <img
-    src="/Fotos/Logo/logoZebra.png"
-    alt="Logo Zebra3D"
-    className="Logoinicial"
-    onClick={() => {
-    navigate('/principal'); // va a la ruta
-    navigate(0); // fuerza recarga (como F5)
-    }}
-    style={{ cursor: 'pointer' }}
-  />
-</div>
+        <img
+          src="/Fotos/Logo/logoZebra.png"
+          alt="Logo Zebra3D"
+          className="Logoinicial"
+          onClick={() => {
+            navigate('/principal');
+            navigate(0);
+          }}
+          style={{ cursor: 'pointer' }}
+        />
+      </div>
 
       <div className="contenido-header">
+        {usuario && (
+  <button onClick={() => navigate('/carrito')} className="btn-carrito">
+    🛒
+    {cantidadItems > 0 && <span className="cart-badge">{cantidadItems}</span>}
+  </button>
+)}
+
         {usuario ? (
           <div className="usuario-dropdown" ref={menuRef}>
             <div className="usuario-mini" onClick={toggleMenu} style={{ cursor: 'pointer' }}>
               {usuario.avatar_url && (
-                <img 
+                <img
                   src={usuario.avatar_url}
                   alt="Avatar"
                   style={{
                     width: '35px',
                     height: '35px',
-                    borderRadius: '50%'
+                    borderRadius: '50%',
                   }}
                 />
               )}
@@ -64,14 +75,17 @@ export default function Header() {
                 <button onClick={() => navigate('/perfil')}>Ver perfil</button>
                 <button onClick={() => navigate('/mensajes')}>Mensajes</button>
                 <hr />
-                <button onClick={() => navigate('/disenos')}>Diseños</button>
+                <button onClick={() => navigate('/disenos')}>Agregar Diseños</button>
+                <button onClick={() => navigate('/tus-disenos')}>Tus diseños</button>
                 <button onClick={() => navigate('/descargas')}>Descargas</button>
                 <button onClick={() => navigate('/ventas')}>Ventas</button>
                 <button onClick={() => navigate('/comunidad')}>Comunidad</button>
                 <button onClick={() => navigate('/favoritos')}>Favoritos</button>
                 <button onClick={() => navigate('/ajustes')}>Ajustes</button>
                 <hr />
-                <button onClick={() => {logout(); window.location.href = '/';}} className="btn-salir"> Cerrar sesión </button>
+                <button onClick={() => { logout(); window.location.href = '/'; }} className="btn-salir">
+                  Cerrar sesión
+                </button>
               </div>
             )}
           </div>

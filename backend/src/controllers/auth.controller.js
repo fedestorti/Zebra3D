@@ -45,7 +45,7 @@ export const register = async (req, res) => {
     if (req.file) {
       avatar_url = req.file.path; // avatar subido por el usuario
     } else {
-      avatar_url = 'https://res.cloudinary.com/dortoxt8j/image/upload/v1755203058/AVatarDefault_zvqurk.png'; // avatar por defecto
+      avatar_url = 'https://res.cloudinary.com/dortoxt8j/image/upload/v1756229764/LogoDefault/Logo/Logo.png.png'; // avatar por defecto
     }
 
     // Insertar usuario

@@ -1,33 +1,62 @@
+/* ===== HEADER FIJO Y RESPIRANDO ===== */
 .encabezado {
   background-color: #171717;
-  padding: 1rem 2rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 120;                /* por encima de casi todo */
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap; /* 🔥 Permite que se acomoden si no entra */
+  gap: clamp(8px, 2vw, 24px);
+  padding: 12px clamp(16px, 3vw, 32px);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  position: fixed;
-  top: 0;
-  width: 100%;
-  z-index: 999;
+  /* Evitá wrap para que no “salte” el contenido */
+  flex-wrap: nowrap;
 }
 
+/* Contenedor del logo: que no colapse ni se achique demasiado */
+.lado-izquierdo {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 0 0 auto;
+}
+
+/* ===== LOGO VISIBLE Y DECENTE ===== */
 .Logoinicial {
-  max-width: 110px;
+  display: block;
+  width: clamp(120px, 18vw, 200px); /* tamaño real, fluido */
   height: auto;
-  padding: 0 110px 0 20px;
+  object-fit: contain;
+  /* Chau padding gigante; si querés aire a la derecha, que sea lógico */
+  margin-right: clamp(8px, 2vw, 20px);
+  padding: 0;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.35));
+  user-select: none;
 }
 
-/* 🔍 Buscador siempre centrado entre logo y botones */
-.buscador {
+/* Si tenés un buscador DENTRO del header, que use el espacio central sin empujar al logo */
+.encabezado .buscador {
   background-color: #212121;
   border: 1px solid #444;
   padding: 0.5rem 1rem;
   border-radius: 8px;
   color: white;
-  max-width: 400px;
+  /* que respire pero no rompa el layout */
+  flex: 1 1 420px;          /* ocupa centro, puede achicarse */
+  max-width: 640px;
   min-width: 200px;
-  margin: 0 auto; /* ✅ Opcional si no hay justify-center */
+  margin: 0 auto;
+}
+
+/* Bloque de acciones a la derecha */
+.contenido-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 0 0 auto;
 }
 
 .acciones {
@@ -47,21 +76,7 @@
   font-weight: 500;
 }
 
-/* 📱 Responsive para pantallas pequeñas */
-
-
-.lado-izquierdo {
-  display: flex;
-  align-items: center;
-}
-
-.contenido-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-/*Menu desplegable*/
+/* ===== MENÚ DESPLEGABLE ===== */
 .usuario-dropdown {
   position: relative;
   display: flex;
@@ -70,7 +85,7 @@
 }
 
 .menu-desplegable {
-  position: absolute;    /* se posiciona dentro del header */
+  position: absolute;
   top: 45px;
   right: 0;
   background: #222;
@@ -79,9 +94,9 @@
   padding: 10px;
   display: flex;
   flex-direction: column;
-  min-width: 180px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  z-index: 100000;       /* alto, pero depende del header */
+  min-width: 200px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.45);
+  z-index: 130;             /* encima del header */
 }
 
 .menu-desplegable button {
@@ -93,18 +108,14 @@
   cursor: pointer;
   font-size: 14px;
 }
-
-.menu-desplegable button:hover {
-  background-color: #333;
-}
-
+.menu-desplegable button:hover { background-color: #333; }
 .menu-desplegable hr {
   border: none;
   border-top: 1px solid #555;
   margin: 8px 0;
 }
 
-
+/* Usuario mini */
 .usuario-mini {
   display: flex;
   align-items: center;
@@ -115,15 +126,55 @@
 
 .flecha-abajo {
   font-size: 10px;
-  color: #ffffff; /* o el color que combine con tu fondo */
+  color: #ffffff;
   transition: transform 0.2s ease;
   padding-right: 3px;
 }
+.flecha-abajo.rotada { transform: rotate(180deg); }
+.flecha-abajo:hover { color: #2563eb; }
 
-/* Si querés que rote al desplegar un menú, podés agregar esta clase luego dinámicamente */
-.flecha-abajo.rotada {
-  transform: rotate(180deg);
+.btn-carrito {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: white;
+  position: relative;
+  padding: 8px;
+  transition: color 0.2s ease;
 }
-.flecha-abajo:hover {
-  color: #2563eb; /* Cambia esto al color que desees al hacer hover */
+
+.btn-carrito:hover {
+  color: #2563eb;
+}
+
+.cart-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background-color: #ef4444; /* rojo */
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 50%;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  box-shadow: 0 0 0 1px black;
+}
+
+
+/* ===== RESPONSIVE SUAVE ===== */
+@media (max-width: 640px) {
+  .Logoinicial {
+    width: clamp(110px, 32vw, 160px);
+    margin-right: 8px;
+  }
+  .encabezado .buscador {
+    flex-basis: 280px; /* se achica con dignidad */
+  }
 }

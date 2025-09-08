@@ -1,0 +1,8 @@
+/* src/components/CartButton.css (si querés) */
+.cart-btn { position: relative; font-size: 22px; }
+.badge {
+  position: absolute; top: -6px; right: -10px;
+  background: #2563eb; color: #fff; border-radius: 999px;
+  min-width: 18px; height: 18px; padding: 0 6px;
+  display: grid; place-items: center; font-size: 12px;
+}

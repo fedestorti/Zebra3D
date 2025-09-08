@@ -1,0 +1,7 @@
+/* src/pages/ServicioImpresion/impresores.css */
+.page-wrapper{ max-width:1100px; margin:0 auto; padding:20px; }
+.buscar{ width:100%; padding:10px 12px; border-radius:10px; margin:10px 0 20px; background:#1f1f1f; color:#fff; border:1px solid #333 }
+.grid-impresores{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:16px }
+.card-impresor{ background:#1a1a1a; border:1px solid #2a2a2a; border-radius:14px; padding:16px }
+.card-impresor h3{ margin:0 0 8px }
+.card-impresor button{ background:#2563eb; color:#fff; border:0; padding:10px 14px; border-radius:10px; cursor:pointer }
