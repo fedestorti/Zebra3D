@@ -3,9 +3,15 @@ import pool from "../db.js";
 // Obtener o crear el carrito del usuario
 export const getOrCreateCart = async (req, res, next) => {
   try {
-    const { id_usuario } = req.user;
+    if (!req.user || !req.user.id_usuario) {
+      console.error("❌ req.user está vacío o mal formado:", req.user);
+      return res.status(401).json({ error: "Token inválido o faltante" });
+    }
 
-    // Crear carrito si no existe
+    const { id_usuario } = req.user;
+    console.log("🛒 Obteniendo carrito para usuario:", id_usuario);
+
+    // Intentar crear o actualizar el carrito
     const { rows } = await pool.query(
       `INSERT INTO carritos (id_usuario)
        VALUES ($1)
@@ -14,28 +20,40 @@ export const getOrCreateCart = async (req, res, next) => {
       [id_usuario]
     );
     const cart = rows[0];
+    console.log("✅ Carrito obtenido/creado:", cart);
 
     // Obtener ítems del carrito + imagen de portada
-    const items = await pool.query(
-      `SELECT ci.id_item, ci.id_diseno, ci.qty,
-              d.titulo, d.precio, d.id_usuario AS id_creador,
-              (
-                SELECT i.url_imagenes
-                FROM imagenes_diseno i
-                WHERE i.id_diseno = d.id_diseno
-                ORDER BY i.orden ASC, i.id_imagen ASC
-                LIMIT 1
-              ) AS portada_url
-       FROM carrito_items ci
-       JOIN disenos d ON d.id_diseno = ci.id_diseno
-       WHERE ci.id_carrito = $1
-       ORDER BY ci.id_item DESC`,
-      [cart.id_carrito]
-    );
+    const itemsQuery = `
+      SELECT ci.id_item, ci.id_diseno, ci.qty,
+       d.titulo, d.precio,
+       d.id_usuario AS id_creador,
+       u.apodo AS apodo_creador,
+       (
+         SELECT i.url_imagenes
+         FROM imagenes_diseno i
+         WHERE i.id_diseno = d.id_diseno
+         ORDER BY i.orden ASC, i.id_imagen ASC
+         LIMIT 1
+       ) AS portada_url
+          FROM carrito_items ci
+          JOIN disenos d ON d.id_diseno = ci.id_diseno
+          JOIN usuarios u ON d.id_usuario = u.id_usuario
+          WHERE ci.id_carrito = $1
+          ORDER BY ci.id_item DESC
+    `;
+
+    const items = await pool.query(itemsQuery, [cart.id_carrito]);
+    console.log(`📦 Carrito tiene ${items.rowCount} ítems`);
 
     res.json({ ...cart, items: items.rows });
+
   } catch (err) {
-    next(err);
+    console.error("🔥 Error en getOrCreateCart:", err.message);
+    console.error(err.stack);
+    return res.status(500).json({
+      error: "❌ Error interno al obtener el carrito",
+      detalle: err.message
+    });
   }
 };
 

@@ -45,18 +45,16 @@ export default function DisenoDetalle() {
 
   const agregarAlCarrito = async () => {
   try {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert("Debes iniciar sesión para agregar al carrito");
+    const id_diseno = diseno?.id_diseno;
+    if (!id_diseno) {
+      console.warn("❌ id_diseno no definido en el diseño:", diseno);
+      alert("Error: diseño inválido. Intentalo más tarde.");
       return;
     }
 
-    await addItem(diseno.id_diseno);
-
-    // Mostrar modal temporal
+    await addItem(id_diseno);
     setShowAgregadoModal(true);
     setTimeout(() => setShowAgregadoModal(false), 2500);
-
   } catch (err) {
     console.error("❌ Error al agregar al carrito:", err.message);
     alert("Error al agregar al carrito");

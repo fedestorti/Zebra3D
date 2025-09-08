@@ -1,91 +1,83 @@
 // src/context/CartContext.jsx
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import API from "../api";
 
-const CartCtx = createContext();
-const LS_KEY = "z3d_cart_v1";
+const CartContext = createContext();
 
-// util: map -> objeto por id, mergea sin duplicar
-const dedupe = (arr) => {
-  const map = new Map();
-  for (const it of arr) {
-    map.set(it.id_diseno, { ...it, qty: 1 }); // qty fijo en 1
-  }
-  return Array.from(map.values());
-};
-
-export function CartProvider({ children }) {
+export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState({ items: [] });
   const [loading, setLoading] = useState(true);
+  const [itemCount, setItemCount] = useState(0);
 
-  // 1) Cargar desde localStorage al inicio
-  useEffect(() => {
+  // 🔄 Obtener carrito actual al iniciar
+  const refresh = async () => {
     try {
-      const raw = localStorage.getItem(LS_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setCart({ items: dedupe(parsed.items || []) });
-      }
-    } catch { /* me ahorro el drama */ }
-  }, []);
+      const res = await API.get("/cart");
+      setCart(res.data);
+      setItemCount(res.data.items?.length || 0);
+    } catch (err) {
+      console.error("❌ No pude sincronizar el carrito", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // 2) Si estoy logueado, sincronizar con backend
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setLoading(true);
-      try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          const { data } = await API.get("/cart"); // debe devolver [{id_diseno,titulo,precio,portada_url,id_creador}]
-          const serverItems = dedupe(data.items || []);
-          // merge con lo que haya en LS (cliente manda prioridad si había algo)
-          setCart(prev => {
-            const merged = dedupe([...(prev.items || []), ...serverItems]);
-            return { items: merged };
-          });
-        }
-      } catch (e) {
-        console.error("No pude sincronizar el carrito", e);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  // ✅ Validar diseño antes de agregar
+  const addToCart = async (id_diseno, qty = 1) => {
+    if (!id_diseno || typeof id_diseno !== "number") {
+      console.warn("⚠️ ID de diseño inválido:", id_diseno);
+      return;
+    }
 
-  // 3) Guardar siempre en localStorage
-  useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(cart)); } catch {}
-  }, [cart]);
-
-  const addItem = async (it) => {
-    setCart(prev => {
-      const exists = prev.items.some(x => x.id_diseno === it.id_diseno);
-      if (exists) return prev; // no duplicar
-      return { items: [...prev.items, { ...it, qty: 1 }] };
-    });
-    // best effort backend
-    try { await API.post("/cart", { id_diseno: it.id_diseno }); } catch {}
+    try {
+      await API.post("/cart/items", { id_diseno, qty });
+      await refresh();
+    } catch (err) {
+      console.error("❌ Error al agregar diseño al carrito:", err);
+    }
   };
 
   const removeItem = async (id_diseno) => {
-    setCart(prev => ({ items: prev.items.filter(x => x.id_diseno !== id_diseno) }));
-    try { await API.delete(`/cart/${id_diseno}`); } catch {}
+    try {
+      await API.delete(`/cart/items/${id_diseno}`);
+      await refresh();
+    } catch (err) {
+      console.error("❌ Error al eliminar ítem del carrito", err);
+    }
   };
 
   const clear = async () => {
-    setCart({ items: [] });
-    try { await API.delete("/cart"); } catch {}
+    try {
+      await API.delete("/cart");
+      await refresh();
+    } catch (err) {
+      console.error("❌ Error al vaciar el carrito", err);
+    }
   };
 
-  const total = useMemo(
-    () => cart.items.reduce((acc, it) => acc + Number(it.precio || 0), 0),
-    [cart.items]
+  useEffect(() => {
+    refresh();
+  }, []);
+
+  const total = cart.items.reduce((acc, item) => acc + Number(item.precio || 0), 0);
+
+  return (
+    <CartContext.Provider
+      value={{
+        cart,
+        loading,
+        itemCount,
+        addItem: addToCart, // alias
+        addToCart,
+        removeItem,
+        clear,
+        refresh,
+        total,
+      }}
+    >
+      {children}
+    </CartContext.Provider>
   );
+};
 
-  const value = { loading, cart, addItem, removeItem, clear, total };
-  return <CartCtx.Provider value={value}>{children}</CartCtx.Provider>;
-}
-
-export const useCart = () => useContext(CartCtx);
+export const useCart = () => useContext(CartContext);

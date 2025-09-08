@@ -11,7 +11,7 @@ import servicioRouter from "./routes/servicioImpresion.routes.js";
 import { cloudinary } from "./lib/cloudinary.js";
 import cartRoutes from "./routes/cart.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
-import mpRoutes from "./routes/mp.routes.js";
+import mpWebhookRoutes from "./routes/mp.webhook.routes.js";
 import ordersRoutes from "./routes/orders.routes.js";
 import salesRoutes from "./routes/sales.routes.js";
 
@@ -28,7 +28,7 @@ app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/servicio", servicioRouter);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
-app.use("/api/mp", mpRoutes);
+app.use("/api/mp", mpWebhookRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/sales", salesRoutes);
 
