@@ -23,29 +23,31 @@ export default function TusdisenosForm() {
   const [imagenesEliminar, setImagenesEliminar] = useState([]);
   const [portadaSeleccionada, setPortadaSeleccionada] = useState(null);
 
-  useEffect(() => {
-    if (!usuario) {
-      setFetching(false);
-      return;
-    }
+ useEffect(() => {
+  
 
-    setFetching(true);
-    API.get(`/disenos/usuario/${usuario.id_usuario}`)
-      .then(res => {
-        const data = res.data;
-        if (Array.isArray(data)) {
-          setDisenos(data);
-        } else {
-          console.warn("⚠️ Respuesta inesperada:", data);
-          setDisenos([]);
-        }
-      })
-      .catch(err => {
-        console.error("❌ Error al obtener diseños del usuario:", err);
+  if (!usuario) {
+    setFetching(false);
+    return;
+  }
+
+  setFetching(true);
+  API.get(`/disenos/usuario/${usuario.id_usuario}`)
+    .then(res => {
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setDisenos(data);
+      } else {
+        console.warn("⚠️ Respuesta inesperada:", data);
         setDisenos([]);
-      })
-      .finally(() => setFetching(false));
-  }, [usuario]);
+      }
+    })
+    .catch(err => {
+      console.error("❌ Error al obtener diseños del usuario:", err);
+      setDisenos([]);
+    })
+    .finally(() => setFetching(false));
+}, [usuario]);
 
   useEffect(() => {
     document.body.style.overflow = modalDiseno ? 'hidden' : '';
@@ -163,8 +165,20 @@ export default function TusdisenosForm() {
   if (disenos.length === 0) return <p>No tienes diseños publicados aún.</p>;
 
   return (
-    <div className="tus-disenos-container">
-      {/* Render de tarjetas y modal */}
+  <div className="tus-disenos-container">
+    <h2 className="titulo-seccion">Tus diseños publicados</h2>
+    <div className="tus-disenos-galeria">
+      {disenos.map(diseno => (
+        <TarjetaDiseno
+          key={diseno.id_diseno}
+          diseno={diseno}
+          onClick={() => openModal(diseno.id_diseno)}
+        />
+      ))}
     </div>
-  );
+
+    {/* Acá podrías agregar el modal si querés (yo lo omito por ahora) */}
+  </div>
+);
+
 }

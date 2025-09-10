@@ -19,7 +19,7 @@ export default function PagePrincipalForm() {
   const [paginaActualTodos, setPaginaActualTodos] = useState(1);
 
   // Cantidad por página: estable y razonable en todas las pantallas
-  const ITEMS_POR_PAGINA = 20;
+  const ITEMS_POR_PAGINA = 50;
 
   const cargarDisenos = async (filtro = "") => {
     try {

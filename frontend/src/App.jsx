@@ -7,9 +7,16 @@ function App() {
   const navigate = useNavigate();
 
   const isPrincipal = location.pathname === '/principal';
+  const hideFooter = location.pathname === '/terminos';
 
   return (
-    <>
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <Header>
         {isPrincipal && (
           <>
@@ -29,10 +36,28 @@ function App() {
           </>
         )}
       </Header>
-      <main>
+
+      <main style={{ flex: 1 }}>
         <Outlet />
       </main>
-    </>
+
+      {!hideFooter && (
+        <footer
+          style={{
+            textAlign: 'center',
+            padding: '20px',
+            fontSize: '14px',
+            color: '#888',
+            backgroundColor: '#121212',
+          }}
+        >
+          © 2025 Zebra3D ·{' '}
+          <a href="/terminos" style={{ color: '#60a5fa', textDecoration: 'none' }}>
+            Términos y Condiciones · Política de Privacidad
+          </a>
+        </footer>
+      )}
+    </div>
   );
 }
 

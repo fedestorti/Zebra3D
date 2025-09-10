@@ -1,0 +1,77 @@
+/* src/pages/Terminos/Terminos.css */
+/* Título principal */
+
+
+.terminos-page {
+  max-width: 900px;
+  margin: 100px auto 80px; /* 👈 empuja todo el bloque hacia abajo */
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 14px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  
+}
+
+.terminos-page h1 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: #60a5fa;
+  text-align: center;
+  border-bottom: 1px solid #333;
+  padding-bottom: 0.5rem;
+}
+
+/* Subtítulos */
+.terminos-page h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.8rem;
+  font-size: 1.3rem;
+  color: #f5f5f5;
+  border-left: 4px solid #60a5fa;
+  padding-left: 10px;
+}
+
+/* Párrafos */
+.terminos-page p {
+  margin-bottom: 1rem;
+  color: #d1d1d1;
+}
+
+/* Listas */
+.terminos-page ul {
+  margin: 1rem 0 1.5rem 1.5rem;
+  padding-left: 1rem;
+}
+
+.terminos-page li {
+  margin-bottom: 0.5rem;
+  color: #cfcfcf;
+}
+
+/* Links */
+.terminos-page a {
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.terminos-page a:hover {
+  color: #3b82f6;
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+  .terminos-page {
+    margin: 40px 1rem;
+    padding: 1.5rem;
+    font-size: 14px;
+  }
+
+  .terminos-page h1 {
+    font-size: 1.5rem;
+  }
+
+  .terminos-page h2 {
+    font-size: 1.1rem;
+  }
+}

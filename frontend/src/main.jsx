@@ -23,7 +23,7 @@ import CarritoPage from './pages/Carrito/CarritoPage.jsx';
 import CheckoutResult from './pages/Checkout/CheckoutResult.jsx';
 import RequireMP from './components/RutaProtegida/RequireMP.jsx';
 import VincularMP from './pages/VincularMP/VincularMP.jsx';
-
+import Terminos from './pages/Terminos/Terminos.jsx';
 // context
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -37,7 +37,7 @@ const publicRoutes = [
   { path: 'disenos/:id', element: <DisenoDetalle key={Date.now()} /> },
   { path: 'perfil/:apodo', element: <Perfil /> },
   { path: 'servicio-impresion', element: <ServicioImpresion /> },
-
+  { path: "/terminos", element: <Terminos />, },
   // ❗ Rutas que usa MercadoPago para redireccionar
   { path: 'pago/ok', element: <CheckoutResult /> },
   { path: 'pago/error', element: <CheckoutResult /> },
@@ -47,14 +47,7 @@ const publicRoutes = [
 // 🔐 Rutas privadas (requieren sesión activa)
 const privateRoutes = [
   { path: 'perfil/:apodo', element: <Perfil /> },
-  {
-    path: 'disenos',
-    element: (
-      <RequireMP>
-        <DisenosForm />
-      </RequireMP>
-    )
-  },
+  { path: 'disenos', element: ( <RequireMP> <DisenosForm /> </RequireMP>) },
   { path: 'tus-disenos', element: <Tusdisenos /> },
   { path: 'carrito', element: <CarritoPage /> },         // ✅ ahora es privada
   { path: 'vincular-mp', element: <VincularMP /> }       // ✅ también es privada

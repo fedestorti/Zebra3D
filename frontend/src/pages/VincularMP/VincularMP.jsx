@@ -1,17 +1,17 @@
-// frontend/src/pages/VincularMP/VincularMP.jsx
-import API from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import API from '../../api';
 import './VincularMP.css';
 
 export default function VincularMP() {
   const navigate = useNavigate();
+  const { refreshUsuario } = useAuth(); // <- importante
 
   const handleVincular = async () => {
     try {
-      const { data } = await API.get('/mp/vincular-url');
+      const { data } = await API.get('/mp/vincular-url', { withCredentials: true });
       if (data?.url) {
-        // 👉 Abrir en popup
         window.open(data.url, "mpPopup", "width=600,height=700");
       } else {
         alert('No se pudo generar la URL de vinculación');
@@ -24,12 +24,19 @@ export default function VincularMP() {
   };
 
   useEffect(() => {
-    const handler = (event) => {
-      if (event.origin !== "http://localhost:5173") return; // seguridad
+    const handler = async (event) => {
+      if (event.origin !== "http://localhost:5173") return;
       if (event.data?.source === "mercadopago") {
         if (event.data.status === "ok") {
           alert("✅ Tu cuenta de Mercado Pago fue vinculada con éxito");
-          navigate('/principal'); // o refrescar perfil
+
+          try {
+            await refreshUsuario(); // <- actualizás los datos del usuario en contexto
+          } catch (e) {
+            console.warn("No se pudo refrescar el usuario");
+          }
+
+          navigate('/principal');
         } else {
           alert("❌ Error al vincular MP: " + (event.data.reason || "desconocido"));
         }
@@ -37,7 +44,7 @@ export default function VincularMP() {
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
-  }, [navigate]);
+  }, [navigate, refreshUsuario]);
 
   return (
     <div className="vincular-mp-page">
