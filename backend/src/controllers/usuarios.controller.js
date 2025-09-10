@@ -205,3 +205,37 @@ export const crearResena = async (req, res) => {
     res.status(500).json({ mensaje: 'Error interno del servidor', detalle: err.message });
   }
 };
+
+// Cambiar bio del usuario autenticado
+export const updateBio = async (req, res) => {
+  try {
+    const { biografia } = req.body;
+    const { id_usuario } = req.user; // <- sacado del JWT
+    const result = await pool.query(
+      `UPDATE usuarios SET biografia=$1 WHERE id_usuario=$2 RETURNING biografia`,
+      [biografia ?? '', id_usuario]
+    );
+    res.json({ biografia: result.rows[0].biografia });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "No se pudo actualizar la biografía" });
+  }
+};
+
+// Cambiar avatar del usuario autenticado
+export const updateAvatar = async (req, res) => {
+  try {
+    const { id_usuario } = req.user;
+    const url = req.file?.path; // Cloudinary te devuelve la URL en file.path
+    if (!url) return res.status(400).json({ error: "Archivo inválido" });
+
+    await pool.query(
+      `UPDATE usuarios SET avatar_url=$1 WHERE id_usuario=$2`,
+      [url, id_usuario]
+    );
+    res.json({ url });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "No se pudo actualizar el avatar" });
+  }
+};

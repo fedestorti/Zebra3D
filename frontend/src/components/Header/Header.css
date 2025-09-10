@@ -27,7 +27,7 @@
 /* ===== LOGO VISIBLE Y DECENTE ===== */
 .Logoinicial {
   display: block;
-  width: clamp(120px, 18vw, 200px); /* tamaño real, fluido */
+  width: clamp(120px, 18vw, 100px); /* tamaño real, fluido */
   height: auto;
   object-fit: contain;
   /* Chau padding gigante; si querés aire a la derecha, que sea lógico */
@@ -176,5 +176,117 @@
   }
   .encabezado .buscador {
     flex-basis: 280px; /* se achica con dignidad */
+  }
+}
+
+.buscador-header {
+  flex: 1 1 100%;
+  max-width: 500px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.buscador-header input {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 15px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: #1f1f1f;
+  color: #f5f5f5;
+  outline: none;
+  transition: border 0.3s ease, box-shadow 0.3s ease;
+}
+
+.buscador-header input::placeholder {
+  color: #888;
+}
+
+.buscador-header input:focus {
+  border-color: #2563EB;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
+}
+
+
+/* ===== HEADER RESPONSIVO MEJORADO ===== */
+@media (max-width: 900px) {
+  .encabezado {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .lado-izquierdo {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .contenido-header {
+    justify-content: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .encabezado .buscador {
+    width: 100%;
+    max-width: 90vw;
+    margin: 0 auto;
+    flex: 1 1 auto;
+  }
+
+  .buscador-header {
+    max-width: 100%;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .acciones {
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    padding-right: 0;
+  }
+
+  .usuario-mini {
+    justify-content: center;
+    width: 100%;
+    padding-right: 0;
+  }
+}
+
+/* ===== BOTÓN HAMBURGUESA ===== */
+.btn-hamburguesa {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: white;
+  cursor: pointer;
+  padding: 6px 12px;
+  z-index: 130;
+}
+
+@media (max-width: 900px) {
+  .btn-hamburguesa {
+    display: block;
+    position: absolute;
+    right: 16px;
+    top: 14px;
+  }
+
+  .contenido-header {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    display: none; /* oculto por defecto */
+    gap: 12px;
+  }
+
+  .contenido-header.abierto {
+    display: flex; /* se muestra si el menú está abierto */
   }
 }

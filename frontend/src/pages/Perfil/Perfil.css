@@ -120,7 +120,7 @@
 /* BIOGRAFÍA */
 .profile-bio {
   margin-top: 1rem;
-  color: #e5e7eb; /* gray-200 */
+  color: #eee; /* gray-200 */
 }
 
 /* SECCIÓN DE DISEÑOS */
@@ -259,3 +259,117 @@
   border: 1px solid #ccc;
   border-radius: 4px;
 }
+
+/* src/pages/Perfil/Perfil.css */
+.owner-actions { 
+  display: flex; 
+  gap: 8px; 
+  margin-left: auto; 
+}
+
+.profile-button.secondary { 
+  background: #eee; 
+  border: 1px solid #333; 
+
+}
+
+.bio-editor { 
+  margin-top: 10px; 
+  display: grid; 
+  gap: 8px; 
+}
+
+.bio-editor textarea {
+  width: 100%; 
+  background: #151515; 
+  color: #eee; 
+  border: 1px solid #333;
+  border-radius: 10px; 
+  padding: 10px; 
+  resize: vertical;
+}
+
+.bio-actions { 
+  display: flex; 
+  gap: 8px;
+}
+
+
+/* src/pages/Perfil/Perfil.css (agregados) */
+.modal-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.65);
+  display: grid; place-items: center;
+  z-index: 9999;
+}
+
+.modal {
+  width: min(520px, 92vw);
+  background: #121212;
+  border: 1px solid #2a2a2a;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.6);
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* 👈 empuja lo de abajo para que quede abajo */
+  gap: 12px;
+  max-height: 90vh; /* por si es muy alto */
+}
+
+.modal-title {
+  margin: 4px 0 14px 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #eaeaea;
+  text-align: left;
+}
+
+.modal h3 { margin: 0 0 12px; }
+
+.modal-img-wrap {
+  width: min(360px, 80vw);
+  height: min(360px, 80vw);
+  margin: 0 auto 14px;
+  display: flex; align-items: center; justify-content: center;
+  background: #000;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #232323;
+}
+
+.modal-img-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;  /* sin deformar */
+  background: #000;
+  display: block;
+}
+
+.modal-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.btn-ghost {
+  appearance: none;
+  border: 1px solid #2f2f2f;
+  background: transparent;
+  color: #d9d9d9;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: .95rem;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease, transform .08s ease;
+}
+.btn-ghost:hover { border-color: #3a3a3a; background: #171717; }
+.btn-ghost:active { transform: translateY(1px); opacity: .95; }
+.btn-ghost:disabled { opacity: .6; cursor: not-allowed; }
+
+/* por si no lo tenías */
+.owner-actions { display: flex; gap: 8px; margin-left: auto; }
+

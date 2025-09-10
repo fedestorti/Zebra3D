@@ -1,9 +1,9 @@
 .vincular-mp-page {
-  min-height: 100vh;
+  min-height: 70vh;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #111;
+  background: #121212;
   color: #f3f3f3;
   padding: 20px;
 }

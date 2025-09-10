@@ -10,9 +10,12 @@ export default function Header() {
   const { cart } = useCart();
   const navigate = useNavigate();
   const [mostrarMenu, setMostrarMenu] = useState(false);
+  const [busqueda, setBusqueda] = useState('');
+  const [menuAbierto, setMenuAbierto] = useState(false);
   const menuRef = useRef(null);
 
-  const toggleMenu = () => setMostrarMenu(!mostrarMenu);
+  const toggleDropdown = () => setMostrarMenu(!mostrarMenu);
+  const toggleMenuMobile = () => setMenuAbierto((prev) => !prev);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -20,17 +23,26 @@ export default function Header() {
         setMostrarMenu(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const cantidadItems = cart.items.reduce((acc, item) => acc + item.qty, 0);
 
+  const handleSubmitBusqueda = (e) => {
+    e.preventDefault();
+    if (busqueda.trim() !== '') {
+      navigate(`/principal?search=${encodeURIComponent(busqueda.trim())}`);
+    }
+  };
+
   return (
     <header className="encabezado">
+      {/* Botón hamburguesa SOLO en mobile */}
+      <button className="btn-hamburguesa" onClick={toggleMenuMobile}>
+        ☰
+      </button>
+
       <div className="lado-izquierdo">
         <img
           src="/Fotos/Logo/logoZebra.png"
@@ -44,35 +56,43 @@ export default function Header() {
         />
       </div>
 
-      <div className="contenido-header">
+      <form className="buscador-header" onSubmit={handleSubmitBusqueda}>
+        <input
+          type="text"
+          placeholder="🔍 Buscar diseños 3D..."
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+        />
+      </form>
+
+      {/* Contenido que se pliega en mobile */}
+      <div className={`contenido-header ${menuAbierto ? 'abierto' : ''}`}>
         {usuario && (
-  <button onClick={() => navigate('/carrito')} className="btn-carrito">
-    🛒
-    {cantidadItems > 0 && <span className="cart-badge">{cantidadItems}</span>}
-  </button>
-)}
+          <button onClick={() => navigate('/carrito')} className="btn-carrito">
+            🛒
+            {cantidadItems > 0 && <span className="cart-badge">{cantidadItems}</span>}
+          </button>
+        )}
 
         {usuario ? (
           <div className="usuario-dropdown" ref={menuRef}>
-            <div className="usuario-mini" onClick={toggleMenu} style={{ cursor: 'pointer' }}>
+            <div className="usuario-mini" onClick={toggleDropdown} style={{ cursor: 'pointer' }}>
               {usuario.avatar_url && (
                 <img
                   src={usuario.avatar_url}
                   alt="Avatar"
-                  style={{
-                    width: '35px',
-                    height: '35px',
-                    borderRadius: '50%',
-                  }}
+                  style={{ width: '35px', height: '35px', borderRadius: '50%' }}
                 />
               )}
-              <span className="flecha-abajo">▼</span>
+              <span className={`flecha-abajo ${mostrarMenu ? 'rotada' : ''}`}>▼</span>
             </div>
 
             {mostrarMenu && (
               <div className="menu-desplegable">
                 <span>{usuario.apodo}</span>
-                <button onClick={() => navigate('/perfil')}>Ver perfil</button>
+                <button onClick={() => navigate(`/perfil/${usuario.apodo}`)}>
+  Ver perfil
+</button>
                 <button onClick={() => navigate('/mensajes')}>Mensajes</button>
                 <hr />
                 <button onClick={() => navigate('/disenos')}>Agregar Diseños</button>
@@ -83,7 +103,13 @@ export default function Header() {
                 <button onClick={() => navigate('/favoritos')}>Favoritos</button>
                 <button onClick={() => navigate('/ajustes')}>Ajustes</button>
                 <hr />
-                <button onClick={() => { logout(); window.location.href = '/'; }} className="btn-salir">
+                <button
+                  onClick={() => {
+                    logout();
+                    window.location.href = '/';
+                  }}
+                  className="btn-salir"
+                >
                   Cerrar sesión
                 </button>
               </div>

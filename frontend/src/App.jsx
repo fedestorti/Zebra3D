@@ -18,23 +18,6 @@ function App() {
       }}
     >
       <Header>
-        {isPrincipal && (
-          <>
-            <input
-              type="text"
-              className="buscador"
-              placeholder="🔍 Buscar diseños 3D..."
-            />
-            <div className="acciones">
-              <button className="boton-principal" onClick={() => navigate('/login')}>
-                Iniciar sesión
-              </button>
-              <button className="boton-principal" onClick={() => navigate('/register')}>
-                Crear cuenta
-              </button>
-            </div>
-          </>
-        )}
       </Header>
 
       <main style={{ flex: 1 }}>

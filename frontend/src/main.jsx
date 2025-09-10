@@ -1,7 +1,6 @@
-// src/main.jsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet } from 'react-router-dom';
 
 // src
 import './index.css';
@@ -9,6 +8,7 @@ import App from './App.jsx';
 
 // components
 import RutaProtegida from './components/RutaProtegida/RutaProtegida.jsx';
+import ScrollToTop from './components/ScrollToTop/ScrollToTop.jsx';
 
 // pages
 import Register from './pages/Register/Register.jsx';
@@ -24,9 +24,20 @@ import CheckoutResult from './pages/Checkout/CheckoutResult.jsx';
 import RequireMP from './components/RutaProtegida/RequireMP.jsx';
 import VincularMP from './pages/VincularMP/VincularMP.jsx';
 import Terminos from './pages/Terminos/Terminos.jsx';
+
 // context
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
+
+// Wrapper para inyectar ScrollToTop dentro del árbol del Router
+function Root() {
+  return (
+    <>
+      <ScrollToTop />
+      <App />
+    </>
+  );
+}
 
 // 📌 Rutas públicas
 const publicRoutes = [
@@ -37,27 +48,27 @@ const publicRoutes = [
   { path: 'disenos/:id', element: <DisenoDetalle key={Date.now()} /> },
   { path: 'perfil/:apodo', element: <Perfil /> },
   { path: 'servicio-impresion', element: <ServicioImpresion /> },
-  { path: "/terminos", element: <Terminos />, },
+  { path: 'terminos', element: <Terminos /> },
   // ❗ Rutas que usa MercadoPago para redireccionar
   { path: 'pago/ok', element: <CheckoutResult /> },
   { path: 'pago/error', element: <CheckoutResult /> },
-  { path: 'pago/pendiente', element: <CheckoutResult /> }
+  { path: 'pago/pendiente', element: <CheckoutResult /> },
 ];
 
 // 🔐 Rutas privadas (requieren sesión activa)
 const privateRoutes = [
   { path: 'perfil/:apodo', element: <Perfil /> },
-  { path: 'disenos', element: ( <RequireMP> <DisenosForm /> </RequireMP>) },
+  { path: 'disenos', element: (<RequireMP><DisenosForm /></RequireMP>) },
   { path: 'tus-disenos', element: <Tusdisenos /> },
-  { path: 'carrito', element: <CarritoPage /> },         // ✅ ahora es privada
-  { path: 'vincular-mp', element: <VincularMP /> }       // ✅ también es privada
+  { path: 'carrito', element: <CarritoPage /> },
+  { path: 'vincular-mp', element: <VincularMP /> },
 ];
 
 // 📌 Router principal
 const router = createBrowserRouter([
   {
     path: '/',
-    element: <App />,
+    element: <Root />,        // 👈 App + ScrollToTop
     children: [
       ...publicRoutes,
       {

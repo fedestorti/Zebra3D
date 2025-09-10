@@ -2,11 +2,14 @@
 import { useEffect, useMemo, useState } from "react";
 import TarjetaDiseno from "../../components/TarjetaDiseno/TarjetaDiseno";
 import "./PagePrincipal.css";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export default function PagePrincipalForm() {
+  const location = useLocation();
+  const queryParams = new URLSearchParams(location.search);
+  const busqueda = queryParams.get("search") || "";
+
   const [disenos, setDisenos] = useState([]);
-  const [busqueda, setBusqueda] = useState("");
   const [todosDisenos, setTodosDisenos] = useState([]);
   const [random25, setRandom25] = useState([]);
 
@@ -14,17 +17,15 @@ export default function PagePrincipalForm() {
   const [filtroPromo, setFiltroPromo] = useState(false);
   const [filtroGratis, setFiltroGratis] = useState(false);
 
-  // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
   const [paginaActualTodos, setPaginaActualTodos] = useState(1);
 
-  // Cantidad por página: estable y razonable en todas las pantallas
   const ITEMS_POR_PAGINA = 50;
 
-  const cargarDisenos = async (filtro = "") => {
+  const cargarDisenos = async () => {
     try {
-      const url = filtro
-        ? `http://localhost:4000/api/disenos?search=${encodeURIComponent(filtro)}`
+      const url = busqueda.trim()
+        ? `http://localhost:4000/api/disenos?search=${encodeURIComponent(busqueda)}`
         : "http://localhost:4000/api/disenos";
       const res = await fetch(url);
       const data = await res.json();
@@ -48,22 +49,16 @@ export default function PagePrincipalForm() {
         console.error(e);
       }
     })();
-  }, []);
+  }, [busqueda]);
 
-  // Filtrado
   const disenosFiltrados = useMemo(() => {
     let out = [...disenos];
-    if (busqueda.trim() !== "") {
-      const q = busqueda.toLowerCase();
-      out = out.filter(d => (d.titulo || "").toLowerCase().includes(q));
-    }
     if (filtroPromo) out = out.filter(d => d.promo);
     if (filtroGratis) out = out.filter(d => d.precio === "Gratis" || d.precio === 0);
     if (filtroPuntuacion) out.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     return out;
-  }, [disenos, busqueda, filtroPromo, filtroGratis, filtroPuntuacion]);
+  }, [disenos, filtroPromo, filtroGratis, filtroPuntuacion]);
 
-  // Paginación listas
   const totalPaginas = Math.max(1, Math.ceil(disenosFiltrados.length / ITEMS_POR_PAGINA));
   const pageStart = (paginaActual - 1) * ITEMS_POR_PAGINA;
   const disenosPagina = disenosFiltrados.slice(pageStart, pageStart + ITEMS_POR_PAGINA);
@@ -72,32 +67,14 @@ export default function PagePrincipalForm() {
   const pageStartTodos = (paginaActualTodos - 1) * ITEMS_POR_PAGINA;
   const disenosPaginaTodos = disenos.slice(pageStartTodos, pageStartTodos + ITEMS_POR_PAGINA);
 
-  // Reset página cuando cambian filtros o búsqueda
-  useEffect(() => { setPaginaActual(1); }, [busqueda, filtroPromo, filtroGratis, filtroPuntuacion]);
+  useEffect(() => {
+    setPaginaActual(1);
+  }, [filtroPromo, filtroGratis, filtroPuntuacion, busqueda]);
 
   const mostrandoGeneral = !(busqueda || filtroGratis || filtroPuntuacion || filtroPromo);
 
   return (
     <div className="pagina-principal">
-      {/* Buscador pegajoso arriba */}
-      <section className="buscador" role="search">
-  <div className="buscador-form">
-    <div className="input-container">
-      <input
-        type="text"
-        placeholder="Buscar diseño..."
-        value={busqueda}
-        onChange={(e) => {
-          setBusqueda(e.target.value);
-          cargarDisenos(e.target.value);
-        }}
-        aria-label="Buscar diseño"
-      />
-      <span className="lupa" aria-hidden>🔎</span>
-    </div>
-  </div>
-</section>
-
       <div className="page-wrapper">
         {mostrandoGeneral && (
           <div className="servicio-link">
@@ -198,10 +175,9 @@ export default function PagePrincipalForm() {
                   )}
                 </div>
               ) : (
-                <p className="sin-resultados">No se encontraron diseños...</p>
+                <p className="vsin-resultados">No se encontraron diseños...</p>
               )}
 
-              {/* “Otros diseños”: grilla adaptable sin 5x5 rígido */}
               <div className="otros-wrapper">
                 <p className="otros">Otros diseños</p>
                 <div className="otros-grid">

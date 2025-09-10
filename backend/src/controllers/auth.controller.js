@@ -1,67 +1,23 @@
-// src/controllers/auth.controller.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../db.js";
 import { cloudinary } from "../lib/cloudinary.js";
 import crypto from "crypto";
-// =========================
-// Helpers JWT + Cookies
-// =========================
-const isProd = process.env.NODE_ENV === "production";
 
+const isProd = process.env.NODE_ENV === "production";
 const COOKIE_BASE = {
-  httpOnly: true,     // no accesible desde JS
-  secure: isProd,     // true solo en HTTPS (prod)
-  sameSite: "lax",    // reduce CSRF sin romper OAuth
+  httpOnly: true,
+  sameSite: "lax",
+  secure: isProd,
   path: "/",
+  // 👉 sin expires / maxAge => cookie de sesión (se borra al cerrar el navegador)
 };
 
-// frontend/src/api.js
-import axios from "axios";
-
-// 👇 la clave: habilitar envío de cookies
-const API = axios.create({
-  baseURL: "http://localhost:4000/api",
-  withCredentials: true, // acepta/manda cookies cross-site
-});
-
-// Helper para leer cookies (CSRF token por ej.)
-function getCookie(name) {
-  return document.cookie
-    .split("; ")
-    .find((r) => r.startsWith(name + "="))
-    ?.split("=")[1];
-}
-
-// Interceptor global
-API.interceptors.request.use((config) => {
-  // CSRF token: se setea desde backend en cookie HttpOnly + Secure
-  const csrf = getCookie("csrf_token");
-  if (csrf) config.headers["X-CSRF-Token"] = csrf;
-
-  // Access token: si lo guardás en memoria o localStorage
-  const token = localStorage.getItem("token") || window.__ACCESS_TOKEN__;
-  if (token) config.headers["Authorization"] = `Bearer ${token}`;
-
-  return config;
-});
-
-export default API;
-
-// Ejemplo de helper
-export async function obtenerPerfilUsuario() {
-  const res = await API.get("/auth/me");
-  return res.data;
-}
-
-
 function signAccess(payload) {
-  // Token corto para llamadas del front
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
 }
-
 function signRefresh(payload) {
-  // Token largo en cookie HttpOnly
+  // El JWT puede durar 30d, pero la cookie es de sesión (solo vive mientras el browser esté abierto)
   return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "30d" });
 }
 
@@ -70,11 +26,9 @@ function signRefresh(payload) {
 // =========================
 export const register = async (req, res) => {
   const { apodo, nombre, apellido, email, contrasena, pais } = req.body;
-
   if (!apodo || !nombre || !apellido || !email || !contrasena || !pais) {
     return res.status(400).json({ error: "Todos los campos son obligatorios" });
   }
-
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) return res.status(400).json({ error: "Email no válido" });
 
@@ -84,7 +38,6 @@ export const register = async (req, res) => {
   }
 
   try {
-    // ¿apodo o email ya existen?
     const existing = await pool.query(
       `SELECT id_usuario FROM usuarios WHERE apodo = $1 OR email = $2`,
       [apodo, email]
@@ -96,16 +49,13 @@ export const register = async (req, res) => {
       return res.status(400).json({ error: "El apodo o email ya están registrados" });
     }
 
-    // Hash
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(contrasena, salt);
 
-    // Avatar
     const avatar_url = req.file
       ? req.file.path
       : "https://res.cloudinary.com/dortoxt8j/image/upload/v1756229764/LogoDefault/Logo/Logo.png.png";
 
-    // Insert
     const result = await pool.query(
       `INSERT INTO usuarios (apodo, nombre, apellido, email, contrasena, avatar_url, pais)
        VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -113,7 +63,6 @@ export const register = async (req, res) => {
       [apodo, nombre, apellido, email, hashedPassword, avatar_url, pais]
     );
 
-    // Carpeta Cloudinary
     await cloudinary.api.create_folder(`usuarios/${apodo}/disenos`);
 
     return res.status(201).json({
@@ -127,52 +76,35 @@ export const register = async (req, res) => {
 };
 
 // =========================
-// Login (access + refresh cookie)
+// Login (cookies de sesión)
 // =========================
-// -----------------------------------------------------------------------------
-// Login con cookies httpOnly (access 15m, refresh 30d)
-// -----------------------------------------------------------------------------
 export const login = async (req, res) => {
   const { email, contrasena } = req.body;
-  console.log('📨 [LOGIN] body:', { email, contrasena: contrasena ? '***' : '(vacía)' });
 
   try {
     const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-    if (result.rows.length === 0) {
-      console.log('🟥 [LOGIN] email no registrado');
-      return res.status(401).json({ mensaje: 'Email no registrado' });
-    }
+    if (result.rows.length === 0) return res.status(401).json({ mensaje: 'Email no registrado' });
 
     const u = result.rows[0];
     const ok = await bcrypt.compare(contrasena, u.contrasena);
-    if (!ok) {
-      console.log('🟥 [LOGIN] contraseña incorrecta');
-      return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
-    }
+    if (!ok) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
 
-    // Tokens
-    const accessToken = jwt.sign({ id_usuario: u.id_usuario }, process.env.JWT_SECRET, { expiresIn: '15m' });
-    const refreshToken = jwt.sign({ id_usuario: u.id_usuario }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const accessToken = signAccess({ id_usuario: u.id_usuario });
+    const refreshToken = signRefresh({ id_usuario: u.id_usuario });
 
-    // ✅ CSRF token
+    // CSRF visible para JS
     const csrfToken = crypto.randomBytes(32).toString("hex");
 
-    // Cookies
-    const sameSiteOpt = 'lax';
-    const baseCookie = { httpOnly: true, sameSite: sameSiteOpt, secure: false, path: '/' };
-
-    res.cookie('access_token', accessToken, baseCookie);
-    res.cookie('refresh_token', refreshToken, { ...baseCookie, maxAge: 30 * 24 * 60 * 60 * 1000 });
-
-    // ✅ Cookie visible por JS para CSRF (no es httpOnly)
+    // Cookies de sesión (sin maxAge/expires)
+    res.cookie('access_token', accessToken, COOKIE_BASE);
+    res.cookie('refresh_token', refreshToken, COOKIE_BASE);
     res.cookie('csrf_token', csrfToken, {
       httpOnly: false,
-      sameSite: sameSiteOpt,
-      secure: false, // ⚠️ true solo en producción con HTTPS
-      path: '/',
+      sameSite: "lax",
+      secure: isProd,
+      path: "/",
     });
 
-    console.log('✅ [LOGIN] Set-Cookie access_token + refresh_token + csrf_token emitidos');
     return res.json({ ok: true });
   } catch (error) {
     console.error('❌ [LOGIN] error:', error.message);
@@ -180,9 +112,8 @@ export const login = async (req, res) => {
   }
 };
 
-
 // =========================
-// Refresh access token desde cookie
+// Refresh access token (usa cookie refresh)
 // =========================
 export const refreshAccessToken = async (req, res) => {
   try {
@@ -192,12 +123,14 @@ export const refreshAccessToken = async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(rt, process.env.JWT_SECRET);
-    } catch (e) {
+    } catch {
       return res.status(401).json({ error: "Refresh inválido o expirado" });
     }
 
-    const access = signAccess({ id_usuario: decoded.id_usuario });
-    return res.json({ token: access });
+    const newAccess = signAccess({ id_usuario: decoded.id_usuario });
+    // Devolvé y también podés re-setear la cookie de access para comodidad
+    res.cookie('access_token', newAccess, COOKIE_BASE);
+    return res.json({ ok: true });
   } catch (err) {
     console.error("refreshAccessToken", err);
     return res.status(500).json({ error: "No se pudo refrescar el token" });
@@ -205,20 +138,14 @@ export const refreshAccessToken = async (req, res) => {
 };
 
 // =========================
-// Logout (borra cookie de refresh)
+// Logout
 // =========================
 export const logout = async (_req, res) => {
-  try {
-    // Limpiar todas las cookies relevantes
-    res.clearCookie("access_token", { path: "/" });
-    res.clearCookie("refresh_token", { path: "/" });
-    res.clearCookie("csrf_token", { path: "/" });
-
-    return res.status(204).end(); // Sin contenido (logout exitoso)
-  } catch (err) {
-    console.error("❌ Error en logout:", err.message);
-    return res.status(500).json({ error: "No se pudo cerrar sesión" });
-  }
+  const clearOpts = { path: "/", sameSite: "lax", secure: isProd };
+  res.clearCookie("access_token", clearOpts);
+  res.clearCookie("refresh_token", clearOpts);
+  res.clearCookie("csrf_token", clearOpts);
+  return res.status(204).end();
 };
 
 // =========================
@@ -226,7 +153,6 @@ export const logout = async (_req, res) => {
 // =========================
 export const obtenerPerfil = async (req, res) => {
   try {
-    // soporta middlewares que pongan req.user o req.usuario
     const authUser = req.user || req.usuario || {};
     const { id_usuario } = authUser;
     if (!id_usuario) return res.status(401).json({ mensaje: "No autenticado" });
