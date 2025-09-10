@@ -93,7 +93,7 @@ body{ margin:0; background:#0f0f0f; color:var(--ink); }
   margin-top: 72px;
 }
 .card-servicio{
-  background-color:#FFFEFE;
+  background-color:#24282C;
   border-radius: 10px;
   width: min(1200px, 100%);
   aspect-ratio: 16 / 5;

@@ -57,6 +57,7 @@
   cursor: pointer;
   border: none;
   transition: background 0.2s;
+  color: #121212;
 }
 .profile-button:hover {
   background: #f3f4f6;

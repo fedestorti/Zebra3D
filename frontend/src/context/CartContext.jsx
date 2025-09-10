@@ -1,39 +1,35 @@
-// src/context/CartContext.jsx
-import { createContext, useContext, useEffect, useState } from "react";
-import API from "../api";
+// context/CartContext.jsx
+import { createContext, useContext, useEffect, useState } from 'react';
+import API from '../api';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext();
 
-export const CartProvider = ({ children }) => {
+export function CartProvider({ children }) {
+  const { usuario, loading: authLoading } = useAuth();
   const [cart, setCart] = useState({ items: [] });
-  const [loading, setLoading] = useState(true);
-  const [itemCount, setItemCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  // 🔄 Obtener carrito actual al iniciar
   const refresh = async () => {
+    setLoading(true);
     try {
-      const res = await API.get("/cart");
-      setCart(res.data);
-      setItemCount(res.data.items?.length || 0);
+      const { data } = await API.get('/cart');
+      setCart(data);
     } catch (err) {
-      console.error("❌ No pude sincronizar el carrito", err);
+      console.error('❌ No pude sincronizar el carrito ', err);
+      setCart({ items: [] });
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Validar diseño antes de agregar
-  const addToCart = async (id_diseno, qty = 1) => {
-    if (!id_diseno || typeof id_diseno !== "number") {
-      console.warn("⚠️ ID de diseño inválido:", id_diseno);
-      return;
-    }
-
+  const addItem = async (id_diseno) => {
     try {
-      await API.post("/cart/items", { id_diseno, qty });
+      await API.post('/cart/items', { id_diseno, qty: 1 });
       await refresh();
     } catch (err) {
-      console.error("❌ Error al agregar diseño al carrito:", err);
+      console.error("❌ Error al agregar item al carrito", err);
+      throw err;
     }
   };
 
@@ -42,13 +38,13 @@ export const CartProvider = ({ children }) => {
       await API.delete(`/cart/items/${id_diseno}`);
       await refresh();
     } catch (err) {
-      console.error("❌ Error al eliminar ítem del carrito", err);
+      console.error("❌ Error al eliminar item del carrito", err);
     }
   };
 
   const clear = async () => {
     try {
-      await API.delete("/cart");
+      await API.delete(`/cart`);
       await refresh();
     } catch (err) {
       console.error("❌ Error al vaciar el carrito", err);
@@ -56,28 +52,25 @@ export const CartProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    refresh();
-  }, []);
-
-  const total = cart.items.reduce((acc, item) => acc + Number(item.precio || 0), 0);
+    if (!authLoading && usuario) refresh();
+    if (!authLoading && !usuario) setCart({ items: [] });
+  }, [authLoading, usuario]);
 
   return (
     <CartContext.Provider
       value={{
         cart,
         loading,
-        itemCount,
-        addItem: addToCart, // alias
-        addToCart,
+        refresh,
+        addItem,
         removeItem,
         clear,
-        refresh,
-        total,
+        total: cart.items.reduce((acc, it) => acc + Number(it.precio || 0), 0),
       }}
     >
       {children}
     </CartContext.Provider>
   );
-};
+}
 
 export const useCart = () => useContext(CartContext);

@@ -1,13 +1,11 @@
+// src/routes/mp.webhook.routes.js
 import { Router } from "express";
-import { mpWebhook } from "../controllers/mp.webhook.controller.js";
+import { webhookMP } from "../controllers/mp.webhook.controller.js";
 
-// MP puede llamar por GET (legacy) o POST (webhook moderno). Soportemos ambos:
-const r = Router();
+const router = Router();
 
-// GET /api/mp/webhook
-r.get("/webhook", mpWebhook);
+// Debe aceptar POST (MP suele mandar POST). También dejá GET por compat.
+router.post("/webhook", webhookMP);
+router.get("/webhook", webhookMP);
 
-// POST /api/mp/webhook
-r.post("/webhook", mpWebhook);
-
-export default r;
+export default router;

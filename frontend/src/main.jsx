@@ -3,14 +3,14 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
-//src
+// src
 import './index.css';
 import App from './App.jsx';
 
-//components
+// components
 import RutaProtegida from './components/RutaProtegida/RutaProtegida.jsx';
 
-//pages
+// pages
 import Register from './pages/Register/Register.jsx';
 import Login from './pages/Login/Login.jsx';
 import PagePrincipalForm from './pages/PagePrincipal/PagePrincipalForm.jsx';
@@ -21,8 +21,10 @@ import Tusdisenos from './pages/Tusdisenos/TusdisenosForm.jsx';
 import ServicioImpresion from './pages/ServicioImpresion/ServicioImpresionForm.jsx';
 import CarritoPage from './pages/Carrito/CarritoPage.jsx';
 import CheckoutResult from './pages/Checkout/CheckoutResult.jsx';
+import RequireMP from './components/RutaProtegida/RequireMP.jsx';
+import VincularMP from './pages/VincularMP/VincularMP.jsx';
 
-//context
+// context
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 
@@ -35,17 +37,27 @@ const publicRoutes = [
   { path: 'disenos/:id', element: <DisenoDetalle key={Date.now()} /> },
   { path: 'perfil/:apodo', element: <Perfil /> },
   { path: 'servicio-impresion', element: <ServicioImpresion /> },
-  { path: 'carrito', element: <CarritoPage /> },
+
+  // ❗ Rutas que usa MercadoPago para redireccionar
   { path: 'pago/ok', element: <CheckoutResult /> },
   { path: 'pago/error', element: <CheckoutResult /> },
-  { path: 'pago/pendiente', element: <CheckoutResult /> },
+  { path: 'pago/pendiente', element: <CheckoutResult /> }
 ];
 
-// 🔐 Rutas privadas
+// 🔐 Rutas privadas (requieren sesión activa)
 const privateRoutes = [
   { path: 'perfil/:apodo', element: <Perfil /> },
-  { path: 'disenos', element: <DisenosForm /> },
+  {
+    path: 'disenos',
+    element: (
+      <RequireMP>
+        <DisenosForm />
+      </RequireMP>
+    )
+  },
   { path: 'tus-disenos', element: <Tusdisenos /> },
+  { path: 'carrito', element: <CarritoPage /> },         // ✅ ahora es privada
+  { path: 'vincular-mp', element: <VincularMP /> }       // ✅ también es privada
 ];
 
 // 📌 Router principal

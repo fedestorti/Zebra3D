@@ -1,37 +1,36 @@
-// src/index.js
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import { PORT } from "./config.js";
 
 import authRoutes from "./routes/auth.routes.js";
 import disenosRoutes from "./routes/disenos.routes.js";
 import usuariosRoutes from "./routes/usuarios.routes.js";
-import servicioRouter from "./routes/servicioImpresion.routes.js";
-import { cloudinary } from "./lib/cloudinary.js";
+import mpWebhookRoutes from "./routes/mp.webhook.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
-import mpWebhookRoutes from "./routes/mp.webhook.routes.js";
-import ordersRoutes from "./routes/orders.routes.js";
-import salesRoutes from "./routes/sales.routes.js";
+import mpRoutes from "./routes/mp.routes.js";
+import { cloudinary } from "./lib/cloudinary.js";
 
 const app = express();
 
-// Middlewares
-app.use(cors());            // si vas a enviar cookies, agregá { origin: "http://localhost:5173", credentials: true }
+// CORS: habilitar cookies (credenciales) desde el front
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 // Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/disenos", disenosRoutes);
 app.use("/api/usuarios", usuariosRoutes);
-app.use("/api/servicio", servicioRouter);
+app.use("/api/mp", mpWebhookRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
-app.use("/api/mp", mpWebhookRoutes);
-app.use("/api/orders", ordersRoutes);
-app.use("/api/sales", salesRoutes);
-
+app.use("/api/mp", mpRoutes);
 
 // Debug de rutas (solo dev)
 app.get("/api/debug/routes", (_req, res) => {

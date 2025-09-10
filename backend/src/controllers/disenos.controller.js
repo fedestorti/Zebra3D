@@ -1,3 +1,4 @@
+//disenos.controller.js
 import pool from '../db.js';
 import { subirArchivoCloudinary, uploadDiseno } from '../middlewares/uploadDiseno.js';
 import { cloudinary } from '../lib/cloudinary.js';
@@ -181,9 +182,11 @@ export const getDisenosUsuario = async (req, res) => {
       ORDER BY d.fecha_subida DESC
     `;
     const result = await pool.query(query, [id_usuario]);
+
+    // 💥 Esta línea es clave: devolvemos un array directo
     res.json(result.rows);
   } catch (err) {
-    console.error("Error obteniendo diseños del usuario:", err);
+    console.error("❌ Error obteniendo diseños del usuario:", err);
     res.status(500).json({ error: "Error al obtener diseños del usuario" });
   }
 };

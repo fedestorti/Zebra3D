@@ -1,0 +1,65 @@
+.vincular-mp-page {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #111;
+  color: #f3f3f3;
+  padding: 20px;
+}
+
+.vincular-card {
+  background: #1f1f1f;
+  border-radius: 12px;
+  padding: 32px;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.vincular-card h1 {
+  font-size: 22px;
+  margin-bottom: 16px;
+}
+
+.vincular-card p {
+  font-size: 15px;
+  line-height: 1.5;
+  margin-bottom: 24px;
+  color: #ccc;
+}
+
+.btn-vincular {
+  background: #00a650; /* Verde MP */
+  border: none;
+  padding: 12px 20px;
+  border-radius: 8px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.btn-vincular:hover {
+  background: #008f45;
+}
+
+.btn-volver {
+  background: transparent;
+  border: 1px solid #555;
+  padding: 10px 18px;
+  border-radius: 8px;
+  color: #ddd;
+  font-size: 14px;
+  cursor: pointer;
+  width: 100%;
+  transition: border 0.2s, color 0.2s;
+}
+
+.btn-volver:hover {
+  border-color: #999;
+  color: #fff;
+}

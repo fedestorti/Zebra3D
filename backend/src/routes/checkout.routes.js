@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { verificarToken } from "../middlewares/auth.middleware.js";
+import { verificarToken } from "../middlewares/validarToken.js";
 import { createCheckout } from "../controllers/checkout.controller.js";
 
 const r = Router();

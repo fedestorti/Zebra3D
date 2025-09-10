@@ -8,7 +8,7 @@ export default function LoginForm() {
   const [form, setForm] = useState({ email: '', contrasena: '' });
   const [mensaje, setMensaje] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const [mostrarContrasena, setMostrarContrasena] = useState(false); // 🔹 estado para mostrar/ocultar
+  const [mostrarContrasena, setMostrarContrasena] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -21,7 +21,7 @@ export default function LoginForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -30,17 +30,16 @@ export default function LoginForm() {
     setEnviando(true);
 
     try {
-      const res = await API.post('/auth/login', form);
-      const { token } = res.data;
+      // ✅ Usamos el login del AuthContext (NO hagas el POST acá otra vez)
+      await login(form.email, form.contrasena);
 
-      login(token);
-
-      setTimeout(() => {
-        setEnviando(false);
-        navigate('/');
-      }, 1500);
+      setEnviando(false);
+      navigate('/');
     } catch (error) {
-      const msg = error.response?.data?.error || '❌ Email o Contraseña incorrecta';
+      const msg =
+        error?.response?.data?.mensaje ||
+        error?.response?.data?.error ||
+        '❌ Email o contraseña incorrecta';
       setMensaje(msg);
       setEnviando(false);
     }
@@ -55,21 +54,24 @@ export default function LoginForm() {
         value={form.email}
         onChange={handleChange}
         required
+        autoComplete="email"
       />
 
       <div className="password-container">
         <input
-          type={mostrarContrasena ? 'text' : 'password'} // 🔹 cambia tipo según estado
+          type={mostrarContrasena ? 'text' : 'password'}
           name="contrasena"
           placeholder="Contraseña"
           value={form.contrasena}
           onChange={handleChange}
           required
+          autoComplete="current-password"
         />
         <button
           type="button"
           className="mostrar-contrasena-btn"
-          onClick={() => setMostrarContrasena(!mostrarContrasena)}
+          onClick={() => setMostrarContrasena((v) => !v)}
+          aria-label={mostrarContrasena ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         >
           {mostrarContrasena ? '🙈' : '👁️'}
         </button>
@@ -81,10 +83,11 @@ export default function LoginForm() {
         enviando={enviando}
         disabled={enviando}
       />
-       
+
       {mensaje && <p className="login-message fade-in">{mensaje}</p>}
+
       <p>----------------- O -------------------</p>
-      {/* 🔹 Botón de registrarse */}
+
       <button
         type="button"
         className="boton-registrarse"

@@ -1,6 +1,6 @@
 // cart.routes.js
 import { Router } from "express";
-import { verificarToken } from "../middlewares/auth.middleware.js";
+import { verificarToken } from "../middlewares/validarToken.js";
 import { getOrCreateCart, addItem, removeItem, clearCart } from "../controllers/cart.controller.js";
 
 const r = Router();
