@@ -15,6 +15,7 @@ import {
   eliminarImagenDiseno,
   seleccionarPortada,
   updateDiseno,
+  getMasDelAutor
 } from '../controllers/disenos.controller.js';
 
 const router = Router();
@@ -27,7 +28,7 @@ const router = Router();
 
 // Listado general
 router.get('/', getDisenos);
-
+router.get('/:id/autor', getMasDelAutor);
 // Diseños de un usuario (debe ir antes que "/:id" para no colisionar)
 router.get('/usuario/:id_usuario', verificarToken, getDisenosUsuario);
 

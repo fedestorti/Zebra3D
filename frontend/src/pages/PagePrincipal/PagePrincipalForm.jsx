@@ -1,13 +1,16 @@
 // src/pages/PagePrincipal/PagePrincipalForm.jsx
 import { useEffect, useMemo, useState } from "react";
-import TarjetaDiseno from "../../components/TarjetaDiseno/TarjetaDiseno";
-import "./PagePrincipal.css";
 import { Link, useLocation } from "react-router-dom";
+import TarjetaDiseno from "../../components/TarjetaDiseno/TarjetaDiseno";
+import CategoryBar from "../../components/CategoryBar/CategoryBar";
+import "./PagePrincipal.css";
 
 export default function PagePrincipalForm() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const busqueda = queryParams.get("search") || "";
+  const catParam = queryParams.get("cat");
+  const categoriaId = catParam ? Number(catParam) : null;
 
   const [disenos, setDisenos] = useState([]);
   const [todosDisenos, setTodosDisenos] = useState([]);
@@ -22,11 +25,26 @@ export default function PagePrincipalForm() {
 
   const ITEMS_POR_PAGINA = 50;
 
+  // 👇 Helper robusto para detectar “gratis”
+  const isFree = (v) => {
+    if (v == null) return false;
+    if (typeof v === "number") return v === 0;
+    if (typeof v === "string") {
+      const s = v.trim().toLowerCase();
+      if (s === "gratis") return true;
+      const num = Number(s.replace?.(/[^\d.-]/g, "") ?? s);
+      return Number.isFinite(num) && num === 0;
+    }
+    return false;
+  };
+
   const cargarDisenos = async () => {
     try {
-      const url = busqueda.trim()
-        ? `http://localhost:4000/api/disenos?search=${encodeURIComponent(busqueda)}`
-        : "http://localhost:4000/api/disenos";
+      const q = new URLSearchParams();
+      if (busqueda.trim()) q.set("search", busqueda.trim());
+      if (categoriaId) q.set("cat", String(categoriaId));
+
+      const url = `http://localhost:4000/api/disenos${q.toString() ? `?${q.toString()}` : ""}`;
       const res = await fetch(url);
       const data = await res.json();
       setDisenos(Array.isArray(data) ? data : []);
@@ -37,6 +55,8 @@ export default function PagePrincipalForm() {
 
   useEffect(() => {
     cargarDisenos();
+
+    // Bloque “Otros diseños”
     (async () => {
       try {
         const res = await fetch("http://localhost:4000/api/disenos");
@@ -49,12 +69,13 @@ export default function PagePrincipalForm() {
         console.error(e);
       }
     })();
-  }, [busqueda]);
+  }, [busqueda, categoriaId]);
 
+  // 👇 Aplica filtros en cliente
   const disenosFiltrados = useMemo(() => {
     let out = [...disenos];
     if (filtroPromo) out = out.filter(d => d.promo);
-    if (filtroGratis) out = out.filter(d => d.precio === "Gratis" || d.precio === 0);
+    if (filtroGratis) out = out.filter(d => isFree(d.precio));
     if (filtroPuntuacion) out.sort((a, b) => (b.rating || 0) - (a.rating || 0));
     return out;
   }, [disenos, filtroPromo, filtroGratis, filtroPuntuacion]);
@@ -69,12 +90,15 @@ export default function PagePrincipalForm() {
 
   useEffect(() => {
     setPaginaActual(1);
-  }, [filtroPromo, filtroGratis, filtroPuntuacion, busqueda]);
+  }, [filtroPromo, filtroGratis, filtroPuntuacion, busqueda, categoriaId]);
 
-  const mostrandoGeneral = !(busqueda || filtroGratis || filtroPuntuacion || filtroPromo);
+  const mostrandoGeneral = !(busqueda || filtroGratis || filtroPuntuacion || filtroPromo || categoriaId);
 
   return (
     <div className="pagina-principal">
+      {/* Solo en esta page */}
+      <CategoryBar sticky={false} fullBleed showAll />
+
       <div className="page-wrapper">
         {mostrandoGeneral && (
           <div className="servicio-link">
@@ -175,7 +199,7 @@ export default function PagePrincipalForm() {
                   )}
                 </div>
               ) : (
-                <p className="vsin-resultados">No se encontraron diseños...</p>
+                <p className="sin-resultados">No se encontraron diseños...</p>
               )}
 
               <div className="otros-wrapper">

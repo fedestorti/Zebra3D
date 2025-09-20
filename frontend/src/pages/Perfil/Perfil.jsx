@@ -26,17 +26,23 @@ export default function Perfil() {
   const [myRating, setMyRating] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  // Edición bio
+  // Bio
   const [editMode, setEditMode] = useState(false);
   const [bioTemp, setBioTemp] = useState('');
   const [savingBio, setSavingBio] = useState(false);
 
-  // Avatar
+  // Avatar (subida)
   const fileInputRef = useRef(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+
+  // Modal ampliar foto de perfil
+  const [ampliarOpen, setAmpliarOpen] = useState(false);
+
+  // Bibliografía
+  const [refs, setRefs] = useState([]); // [{autores, anio, titulo, editorial, url}]
 
   useEffect(() => {
     async function fetchData() {
@@ -76,16 +82,47 @@ export default function Perfil() {
           setIsFollowing(false);
         }
       }
+
+
+      try {
+        const { data } = await API.get(`/usuarios/${apodo}/bibliografia`);
+        if (Array.isArray(data) && data.length) {
+          setRefs(data);
+        } else {
+          perfil?.bibliografia && Array.isArray(perfil.bibliografia) && setRefs(perfil.bibliografia);
+        }
+      } catch {
+      }
     }
 
     fetchData();
   }, [apodo, usuario]);
 
+  // Limpia URL de preview al desmontar
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  // Cerrar modales con ESC
+  useEffect(() => {
+    const onKey = e => {
+      if (e.key === 'Escape') {
+        setAmpliarOpen(false);
+        setShowPreview(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Bloquear scroll de fondo cuando hay modal abierto
+  useEffect(() => {
+    const anyModalOpen = ampliarOpen || showPreview;
+    document.body.style.overflow = anyModalOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [ampliarOpen, showPreview]);
 
   const isOwner =
     !!usuario &&
@@ -101,7 +138,7 @@ export default function Perfil() {
       if (isFollowing) {
         await API.delete(`/usuarios/${apodo}/seguidores`);
         setIsFollowing(false);
-        setFollowers(c => c - 1);
+        setFollowers(c => Math.max(0, c - 1));
       } else {
         await API.post(`/usuarios/${apodo}/seguidores`);
         setIsFollowing(true);
@@ -136,7 +173,7 @@ export default function Perfil() {
     }
   };
 
-  // Avatar
+  // Avatar: seleccionar archivo
   const handlePickAvatar = () => fileInputRef.current?.click();
 
   const handleAvatarFileSelect = e => {
@@ -148,6 +185,7 @@ export default function Perfil() {
     setShowPreview(true);
   };
 
+  // Avatar: confirmar subida
   const confirmUploadAvatar = async () => {
     if (!selectedFile) return;
     try {
@@ -187,7 +225,7 @@ export default function Perfil() {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Guardar bio (máximo 600 caracteres)
+  // Guardar bio
   const handleSaveBio = async () => {
     if ((bioTemp || '').length > 600) {
       alert('La biografía no puede superar los 600 caracteres.');
@@ -211,13 +249,30 @@ export default function Perfil() {
     }
   };
 
+  // Mensajes
+  const handleEnviarMensaje = () => {
+    if (!usuario) {
+      alert('Debes iniciar sesión para enviar mensajes');
+      return navigate('/login');
+    }
+    navigate(`/mensajes?to=${encodeURIComponent(profile.apodo)}`);
+  };
+
   if (!profile) return <div>Cargando...</div>;
 
   return (
     <div className="main-container">
       <div className="profile-header">
         <div className="profile-header2">
-          <img src={profile.avatar_url} alt="" className="profile-avatar" />
+          {/* Avatar: clic para ampliar */}
+          <img
+            src={profile.avatar_url}
+            alt={`Avatar de ${profile.apodo}`}
+            className="profile-avatar ampliable"
+            loading="eager"
+            sizes="(max-width: 768px) 96px, 128px"
+            onClick={() => setAmpliarOpen(true)}
+          />
           <input
             ref={fileInputRef}
             type="file"
@@ -230,13 +285,24 @@ export default function Perfil() {
             <div className="profile-top">
               <span className="profile-username">@{profile.apodo}</span>
 
+              {/* Visitante: seguir + mensaje */}
               {!isOwner && usuario && (
-                <button
-                  className={`profile-button ${isFollowing ? 'following' : ''}`}
-                  onClick={handleFollow}
-                >
-                  {isFollowing ? 'Siguiendo' : 'Seguir'}
-                </button>
+                <>
+                  <button
+                    className={`profile-button ${isFollowing ? 'following' : ''}`}
+                    onClick={handleFollow}
+                  >
+                    {isFollowing ? 'Siguiendo' : 'Seguir'}
+                  </button>
+
+                  <button
+                    className="profile-button secondary"
+                    onClick={handleEnviarMensaje}
+                    title="Enviar mensaje directo"
+                  >
+                    Mensaje
+                  </button>
+                </>
               )}
 
               {!isOwner && (
@@ -250,6 +316,7 @@ export default function Perfil() {
                 />
               )}
 
+              {/* Dueño: editar */}
               {isOwner && (
                 <div className="owner-actions">
                   <button className="profile-button secondary" onClick={handlePickAvatar}>
@@ -321,9 +388,14 @@ export default function Perfil() {
             style={{ cursor: 'pointer' }}
           >
             {d.imagenes[0] ? (
-              <img src={d.imagenes[0]} alt={d.titulo} />
+              <img
+                src={d.imagenes[0]}
+                alt={d.titulo}
+                loading="lazy"
+                sizes="(max-width: 600px) 45vw, (max-width: 900px) 30vw, 220px"
+              />
             ) : (
-              <div className="no-image">Sin imagen</div>
+              <div className="design-placeholder">Sin imagen</div>
             )}
             <div className="design-footer">
               <span className="design-title">{d.titulo}</span>
@@ -335,15 +407,41 @@ export default function Perfil() {
         ))}
       </div>
 
-      {showPreview && (
-        <div className="modal-backdrop">
-          <div className="modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
-            <h3 className="modal-title">Previsualizar nueva foto</h3>
+      {/* ===== Bibliografía (si hay referencias) ===== */}
+      {refs.length > 0 && (
+        <section className="refs" aria-labelledby="refs-title">
+          <h3 id="refs-title" className="refs-title">Bibliografía</h3>
+          <ol className="refs-list">
+            {refs.map((ref, i) => (
+              <li key={i} className="ref-item" id={`ref-${i+1}`}>
+                {ref.autores ? <span className="ref-autores">{ref.autores}. </span> : null}
+                {ref.anio ? <span className="ref-anio">({ref.anio}). </span> : null}
+                {ref.titulo ? <span className="ref-titulo">{ref.titulo}. </span> : null}
+                {ref.editorial ? <span className="ref-editorial">{ref.editorial}. </span> : null}
+                {ref.url ? (
+                  <a
+                    className="ref-link"
+                    href={ref.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    {ref.url}
+                  </a>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
+      {/* Modal de previsualización de subida */}
+      {showPreview && (
+        <div className="modal-backdrop" onClick={() => setShowPreview(false)}>
+          <div className="modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
+            <h3 className="modal-title">Previsualizar nueva Foto de Perfil</h3>
             <div className="modal-img-wrap">
               <img src={previewUrl} alt="preview avatar" />
             </div>
-
             <div className="modal-actions">
               <button
                 type="button"
@@ -353,7 +451,6 @@ export default function Perfil() {
               >
                 Cancelar
               </button>
-
               <BotonZebra
                 onClick={confirmUploadAvatar}
                 disabled={uploading}
@@ -361,6 +458,49 @@ export default function Perfil() {
                 texto={uploading ? 'Subiendo...' : 'Aceptar'}
                 aria-label="Confirmar nueva foto de perfil"
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal ampliar_FotoPerfil */}
+      {ampliarOpen && (
+        <div className="ampliar-backdrop" onClick={() => setAmpliarOpen(false)}>
+          <div
+            id="ampliar_FotoPerfil"
+            className="ampliar-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Foto de perfil ampliada"
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              className="ampliar-close"
+              onClick={() => setAmpliarOpen(false)}
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+
+            <div className="ampliar-img-wrap">
+              <img
+                src={profile.avatar_url}
+                alt={`Foto de ${profile.apodo}`}
+                className="ampliar-img"
+              />
+            </div>
+
+            <div className="ampliar-actions">
+              {!isOwner && (
+                <BotonZebra
+                  onClick={handleEnviarMensaje}
+                  texto="Enviar mensaje"
+                  aria-label="Enviar mensaje a este usuario"
+                />
+              )}
+              <button className="btn-ghost" onClick={() => setAmpliarOpen(false)}>
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

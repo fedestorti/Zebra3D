@@ -12,13 +12,12 @@ function getCookie(name) {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-// Si no hay csrf_token, lo pedimos una vez (opcional)
 export async function ensureCsrf() {
   if (!getCookie("csrf_token")) {
     try {
-      await API.get("/auth/csrf"); // el backend setea la cookie csrf_token (httpOnly:false)
+      await API.get("/auth/csrf"); 
     } catch {
-      // silencio: si falla acá, la siguiente request fallará con 403 y sabrás dónde mirar
+      
     }
   }
 }

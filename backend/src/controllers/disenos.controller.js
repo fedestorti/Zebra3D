@@ -90,29 +90,72 @@ for (const file of req.files.imagenes) {
 // ==================== OBTENER TODOS LOS DISEÑOS ====================
 export const getDisenos = async (req, res) => {
   try {
-    const search = req.query.search || "";
+    const search = (req.query.search || '').trim();
+    const catParam = req.query.cat;                 // p.ej. ?cat=12
+    const cslug    = (req.query.cslug || '').trim(); // p.ej. ?cslug=figuras
+
+    const where = [];
+    const params = [];
+    let idx = 1;
+
+    if (search) {
+      where.push(`LOWER(d.titulo) LIKE LOWER($${idx++})`);
+      params.push(`%${search}%`);
+    }
+
+    // Resolver categoría a ID (acepta id, slug o nombre)
+    if (catParam || cslug) {
+      let catId = null;
+
+      if (catParam && /^\d+$/.test(String(catParam))) {
+        catId = Number(catParam);
+      } else if (cslug) {
+        const r = await pool.query(
+          `SELECT id_categoria
+             FROM categorias
+            WHERE slug = $1 OR LOWER(nombre) = LOWER($1)
+            LIMIT 1`,
+          [cslug]
+        );
+        if (r.rowCount) catId = r.rows[0].id_categoria;
+      }
+
+      if (catId) {
+        where.push(`d.categoria = $${idx++}`);
+        params.push(catId);
+      }
+    }
+
+    const whereSQL = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
     const query = `
-      SELECT d.id_diseno,
-             d.titulo,
-             u.apodo AS creador,
-             CASE WHEN d.precio = 0 THEN 'Gratis' ELSE CONCAT('$', d.precio) END AS precio,
-             COALESCE(
-               json_agg(i.url_imagenes ORDER BY i.orden) 
-               FILTER (WHERE i.url_imagenes IS NOT NULL),
-               '{}'
-             ) AS imagenes
+      SELECT
+        d.id_diseno,
+        d.titulo,
+        u.apodo AS creador,
+        d.precio,                         -- NUMÉRICO (no string)
+        d.categoria,                      -- id de categoría
+        COALESCE(c.nombre, '') AS categoria_nombre,
+        COALESCE(c.slug,   '') AS categoria_slug,
+        COALESCE(
+          json_agg(i.url_imagenes ORDER BY i.orden)
+            FILTER (WHERE i.url_imagenes IS NOT NULL),
+          '[]'
+        ) AS imagenes
       FROM disenos d
-      JOIN usuarios u ON d.id_usuario = u.id_usuario
-      LEFT JOIN imagenes_diseno i ON d.id_diseno = i.id_diseno
-      WHERE LOWER(d.titulo) LIKE LOWER($1)
-      GROUP BY d.id_diseno, u.apodo, d.precio
+      JOIN usuarios u         ON u.id_usuario = d.id_usuario
+      LEFT JOIN categorias c  ON c.id_categoria = d.categoria
+      LEFT JOIN imagenes_diseno i ON i.id_diseno = d.id_diseno
+      ${whereSQL}
+      GROUP BY d.id_diseno, u.apodo, c.nombre, c.slug
       ORDER BY d.fecha_subida DESC
     `;
-    const result = await pool.query(query, [`%${search}%`]);
-    res.json(result.rows);
+
+    const { rows } = await pool.query(query, params);
+    res.json(rows);
   } catch (err) {
-    console.error("Error obteniendo diseños:", err);
-    res.status(500).json({ error: "Error al obtener diseños" });
+    console.error('Error obteniendo diseños:', err);
+    res.status(500).json({ error: 'Error al obtener diseños' });
   }
 };
 
@@ -120,37 +163,62 @@ export const getDisenos = async (req, res) => {
 export const getDisenoById = async (req, res) => {
   const { id } = req.params;
   try {
-    // Traer datos del diseño
+    // Diseño + datos de categoría
     const disenoQuery = `
-      SELECT d.id_diseno, d.titulo, d.descripcion, d.archivo_url, 
-             d.precio, d.fecha_subida, d.categoria, d.etiqueta, d.parametros_fabricacion,
-             u.apodo AS creador
+      SELECT 
+        d.id_diseno,
+        d.titulo,
+        d.descripcion,
+        d.archivo_url,
+        d.precio,
+        d.fecha_subida,
+        d.categoria           AS categoria_id,      -- ID (FK)
+        COALESCE(c.nombre, '') AS categoria_nombre, -- nombre legible
+        COALESCE(c.slug,   '') AS categoria_slug,   -- slug
+        d.etiqueta,
+        d.parametros_fabricacion,
+        u.apodo AS creador
       FROM disenos d
-      JOIN usuarios u ON d.id_usuario = u.id_usuario
+      JOIN usuarios u        ON d.id_usuario = u.id_usuario
+      LEFT JOIN categorias c ON c.id_categoria = d.categoria
       WHERE d.id_diseno = $1
+      LIMIT 1
     `;
     const disenoResult = await pool.query(disenoQuery, [id]);
     if (disenoResult.rows.length === 0) {
       return res.status(404).json({ error: "Diseño no encontrado" });
     }
 
-    // Traer imágenes del diseño
+    // Imágenes del diseño
     const imagenesQuery = `
       SELECT id_imagen, url_imagenes, orden
       FROM imagenes_diseno
       WHERE id_diseno = $1
-      ORDER BY orden ASC
+      ORDER BY orden ASC, id_imagen ASC
     `;
     const imagenesResult = await pool.query(imagenesQuery, [id]);
 
-    // Devolver diseño con imágenes como objetos
+    const row = disenoResult.rows[0];
+
+    // Respuesta: compat + datos ricos de categoría
     res.json({
-      ...disenoResult.rows[0],
+      id_diseno: row.id_diseno,
+      titulo: row.titulo,
+      descripcion: row.descripcion,
+      archivo_url: row.archivo_url,
+      precio: row.precio,
+      fecha_subida: row.fecha_subida,
+      categoria: row.categoria_id, // compat: sigue siendo el ID numérico
+      categoria_nombre: row.categoria_nombre,
+      categoria_slug: row.categoria_slug,
+      etiqueta: row.etiqueta,
+      parametros_fabricacion: row.parametros_fabricacion,
+      creador: row.creador,
       imagenes: imagenesResult.rows.map(img => ({
         id_imagen: img.id_imagen,
-        url: img.url_imagenes,       // esto sirve para <img src={img.url} />
+        url: img.url_imagenes,
         orden: img.orden,
-        portada: img.orden === 0      // opcional: la primera imagen como portada
+        portada: img.orden === 0
       }))
     });
 
@@ -159,6 +227,7 @@ export const getDisenoById = async (req, res) => {
     res.status(500).json({ error: "Error al obtener el diseño" });
   }
 };
+
 
 // ==================== OBTENER DISEÑOS DE UN USUARIO ====================
 export const getDisenosUsuario = async (req, res) => {
@@ -263,31 +332,40 @@ export const eliminarDiseno = async (req, res) => {
 // ==================== ACTUALIZAR DISEÑO ====================
 export const updateDiseno = async (req, res) => {
   const { id } = req.params;
-  const { titulo, descripcion, precio, categoria, etiqueta, parametros_fabricacion, portadaSeleccionada, imagenesEliminar } = req.body;
+  const {
+    titulo,
+    descripcion,
+    precio,
+    categoria,                     // puede venir id (número), slug o nombre
+    etiqueta,
+    parametros_fabricacion,
+    portadaSeleccionada,
+    imagenesEliminar
+  } = req.body;
+
   const archivo = req.files?.archivo_3d?.[0];
   const imagenes = req.files?.imagenes || [];
 
   try {
-    // 1️⃣ Obtener diseño actual
+    // 1) Diseño actual
     const disenoActual = (await pool.query(
       `SELECT * FROM disenos WHERE id_diseno = $1`,
       [id]
     )).rows[0];
     if (!disenoActual) return res.status(404).json({ error: "Diseño no encontrado" });
 
-    // 2️⃣ Obtener apodo del usuario logueado
+    // 2) Usuario (para paths de Cloudinary)
     const usuarioDB = (await pool.query(
       "SELECT apodo FROM usuarios WHERE id_usuario = $1",
       [req.usuario.id_usuario]
     )).rows[0];
     if (!usuarioDB) return res.status(404).json({ error: "Usuario no encontrado" });
-
     const apodo = usuarioDB.apodo;
 
-    // 3️⃣ Carpeta base para Cloudinary
-    const carpetaBase = `usuarios/${apodo}/disenos/${titulo || disenoActual.titulo}`;
+    // 3) Carpeta base
+    const carpetaBase = `usuarios/${apodo}/disenos/${(titulo || disenoActual.titulo)}`;
 
-    // 4️⃣ Manejar archivo 3D
+    // 4) Archivo 3D (si hay)
     let archivo_url = disenoActual.archivo_url || null;
     if (archivo) {
       if (archivo_url) {
@@ -307,94 +385,148 @@ export const updateDiseno = async (req, res) => {
       archivo_url = resultArchivo.url;
     }
 
-    // 5️⃣ Actualizar campos del diseño
-    const updateFields = [
-      "titulo = $1",
-      "descripcion = $2",
-      "precio = $3",
-      "categoria = $4",
-      "etiqueta = $5",
-      "parametros_fabricacion = $6",
-      "archivo_url = $7"
-    ];
-    const params = [
-      titulo || disenoActual.titulo,
-      descripcion || disenoActual.descripcion,
-      precio || disenoActual.precio,
-      categoria || disenoActual.categoria,
-      etiqueta || disenoActual.etiqueta,
-      parametros_fabricacion || disenoActual.parametros_fabricacion,
-      archivo_url,
-      id
-    ];
-    const query = `UPDATE disenos SET ${updateFields.join(", ")} WHERE id_diseno = $8 RETURNING *;`;
-    const updatedDiseno = (await pool.query(query, params)).rows[0];
-
-    // 6️⃣ Eliminar imágenes marcadas
-    if (imagenesEliminar && Array.isArray(JSON.parse(imagenesEliminar))) {
-      const idsEliminar = JSON.parse(imagenesEliminar);
-      for (const idImg of idsEliminar) {
-        const imgRow = (await pool.query(`SELECT * FROM imagenes_diseno WHERE id_imagen = $1`, [idImg])).rows[0];
-        if (imgRow) {
-          await cloudinary.uploader.destroy(imgRow.public_id, { resource_type: "image" });
-          await pool.query(`DELETE FROM imagenes_diseno WHERE id_imagen = $1`, [idImg]);
+    // 4.5) Resolver ID de categoría (si vino algo en 'categoria')
+    // La columna disenos.categoria es INTEGER (FK a categorias.id_categoria)
+    let categoriaId = disenoActual.categoria; // por defecto queda como estaba
+    if (categoria !== undefined) {
+      // Permitir limpiar la categoría
+      if (categoria === null || categoria === '') {
+        categoriaId = null;
+      } else {
+        // Si es número: validar existencia
+        if (/^\d+$/.test(String(categoria))) {
+          const r = await pool.query(
+            `SELECT id_categoria FROM categorias WHERE id_categoria = $1 AND activa = TRUE`,
+            [Number(categoria)]
+          );
+          if (r.rowCount === 0) {
+            return res.status(400).json({ error: "Categoría (id) inexistente o inactiva" });
+          }
+          categoriaId = r.rows[0].id_categoria;
+        } else {
+          // Si es texto: buscar por slug o nombre (case-insensitive)
+          const r = await pool.query(
+            `SELECT id_categoria
+               FROM categorias
+              WHERE (slug = $1 OR LOWER(nombre) = LOWER($2))
+                AND activa = TRUE
+              LIMIT 1`,
+            [String(categoria), String(categoria)]
+          );
+          if (r.rowCount === 0) {
+            return res.status(400).json({ error: "Categoría (slug/nombre) inexistente o inactiva" });
+          }
+          categoriaId = r.rows[0].id_categoria;
         }
       }
     }
 
-    // 7️⃣ Subir nuevas imágenes
-    for (const img of imagenes) {
-      const nombreBase = img.originalname.split('.')[0]
-        .replace(/\s+/g, '_')
-        .replace(/\./g, '-')
-        .replace(/[^a-zA-Z0-9-_]/g, '');
+    // 5) Actualizar campos del diseño
+    const updateFields = [
+      "titulo = $1",
+      "descripcion = $2",
+      "precio = $3",
+      "categoria = $4",          // << ahora siempre va un ID o NULL
+      "etiqueta = $5",
+      "parametros_fabricacion = $6",
+      "archivo_url = $7"
+    ];
 
-      try {
-        const { url, public_id } = await subirArchivoCloudinary(
-          img.buffer,
-          'image',
-          `${carpetaBase}/imagenes`,
-          nombreBase
-        );
+    const params = [
+      titulo ?? disenoActual.titulo,
+      descripcion ?? disenoActual.descripcion,
+      (precio ?? disenoActual.precio),
+      categoriaId,                                    // <-- ID resuelto
+      etiqueta ?? disenoActual.etiqueta,
+      parametros_fabricacion ?? disenoActual.parametros_fabricacion,
+      archivo_url,
+      id
+    ];
 
-        if (!url || !public_id) throw new Error("Archivo no subido correctamente");
+    const query = `UPDATE disenos SET ${updateFields.join(", ")} WHERE id_diseno = $8 RETURNING *;`;
+    const updatedDiseno = (await pool.query(query, params)).rows[0];
 
-        const orden = (portadaSeleccionada && img.originalname === portadaSeleccionada) ? 0 : 1;
-
-        await pool.query(
-          `INSERT INTO imagenes_diseno (id_diseno, url_imagenes, public_id, orden) VALUES ($1, $2, $3, $4)`,
-          [id, url, public_id, orden]
-        );
-
-      } catch (err) {
-        console.error("❌ Error al subir esta imagen:", img.originalname, err.message);
+    // 6) Eliminar imágenes marcadas
+    if (imagenesEliminar) {
+      let idsEliminar;
+      try { idsEliminar = JSON.parse(imagenesEliminar); } catch { idsEliminar = []; }
+      if (Array.isArray(idsEliminar) && idsEliminar.length) {
+        for (const idImg of idsEliminar) {
+          const imgRow = (await pool.query(
+            `SELECT public_id FROM imagenes_diseno WHERE id_imagen = $1`,
+            [idImg]
+          )).rows[0];
+          if (imgRow) {
+            try { await cloudinary.uploader.destroy(imgRow.public_id, { resource_type: "image" }); } catch {}
+            await pool.query(`DELETE FROM imagenes_diseno WHERE id_imagen = $1`, [idImg]);
+          }
+        }
       }
     }
 
-    // 8️⃣ Marcar portada
+    // 7) Subir nuevas imágenes
+    for (const img of imagenes) {
+      const nombreBase = img.originalname.split('.')[0]
+        .replace(/\s+/g, '_').replace(/\./g, '-').replace(/[^a-zA-Z0-9-_]/g, '');
+
+      try {
+        const { url, public_id } = await subirArchivoCloudinary(
+          img.buffer, 'image', `${carpetaBase}/imagenes`, nombreBase
+        );
+        if (!url || !public_id) throw new Error("Archivo no subido correctamente");
+
+        // En PUT, si querés que alguna de las NUEVAS sea portada deberías
+        // marcarla luego de guardar y conocer su id_imagen. Por ahora 1.
+        await pool.query(
+          `INSERT INTO imagenes_diseno (id_diseno, url_imagenes, public_id, orden)
+           VALUES ($1, $2, $3, 1)`,
+          [id, url, public_id]
+        );
+      } catch (err) {
+        console.error("❌ Error al subir imagen:", img.originalname, err.message);
+      }
+    }
+
+    // 8) Marcar portada si corresponde (solo sobre existentes)
     if (portadaSeleccionada) {
       await pool.query(
-        `UPDATE imagenes_diseno SET orden = CASE WHEN id_imagen = $1 THEN 0 ELSE 1 END WHERE id_diseno = $2`,
+        `UPDATE imagenes_diseno
+            SET orden = CASE WHEN id_imagen = $1 THEN 0 ELSE 1 END
+          WHERE id_diseno = $2`,
         [portadaSeleccionada, id]
       );
     }
 
-    // 9️⃣ Obtener todas las imágenes actualizadas
+    // 9) Volver imágenes actualizadas
     const imagenesDiseno = (await pool.query(
-      `SELECT id_imagen, url_imagenes as url, orden FROM imagenes_diseno WHERE id_diseno = $1 ORDER BY orden ASC, id_imagen ASC`,
+      `SELECT id_imagen, url_imagenes AS url, orden
+         FROM imagenes_diseno
+        WHERE id_diseno = $1
+        ORDER BY orden ASC, id_imagen ASC`,
       [id]
     )).rows;
 
-    res.json({ ...updatedDiseno, imagenes: imagenesDiseno });
+    // (Opcional) enriquecer con info de la categoría
+    let categoriaInfo = null;
+    if (updatedDiseno.categoria) {
+      const rCat = await pool.query(
+        `SELECT id_categoria, nombre, slug FROM categorias WHERE id_categoria = $1`,
+        [updatedDiseno.categoria]
+      );
+      categoriaInfo = rCat.rows[0] || null;
+    }
+
+    res.json({
+      ...updatedDiseno,
+      categoria_info: categoriaInfo,   // útil para el front
+      imagenes: imagenesDiseno
+    });
 
   } catch (err) {
     console.error("❌ Error al actualizar diseño:", err);
     res.status(500).json({ error: "Error al actualizar diseño" });
   }
 };
-
-
-
 
 
 
@@ -462,3 +594,68 @@ export const seleccionarPortada = async (req, res) => {
     res.status(500).json({ error: "Error al actualizar portada" });
   }
 };
+
+// ==================== MAS DISEÑOS DEL MISMO AUTOR ====================
+
+
+export const getMasDelAutor = async (req, res) => {
+  try {
+    const disenoId = Number(req.params.id);
+    const limit = Math.max(1, Math.min(10, Number(req.query.limit) || 4));
+    if (!Number.isInteger(disenoId)) {
+      return res.status(400).json({ error: 'ID inválido' });
+    }
+
+    // autor del diseño actual
+    const d = await pool.query(
+      `SELECT d.id_usuario, u.apodo
+         FROM disenos d
+         JOIN usuarios u ON u.id_usuario = d.id_usuario
+        WHERE d.id_diseno = $1`,
+      [disenoId]
+    );
+    if (d.rowCount === 0) return res.status(404).json({ error: 'Diseño no encontrado' });
+
+    const idUsuario = d.rows[0].id_usuario;
+    const apodo = d.rows[0].apodo;
+
+    const fetchBy = async ({ byUserId = true }) => {
+      const where = byUserId
+        ? `dis.id_usuario = $1 AND dis.id_diseno <> $2`
+        : `u.apodo = $1 AND dis.id_diseno <> $2`;
+      const params = byUserId ? [idUsuario, disenoId, limit] : [apodo, disenoId, limit];
+
+      const q = `
+        SELECT
+          dis.id_diseno,
+          dis.titulo,
+          dis.precio,
+          u.apodo AS creador,
+          i1.url_imagenes AS portada_url
+        FROM disenos dis
+        JOIN usuarios u ON u.id_usuario = dis.id_usuario
+        LEFT JOIN LATERAL (
+          SELECT i.url_imagenes
+            FROM imagenes_diseno i
+           WHERE i.id_diseno = dis.id_diseno
+           ORDER BY i.orden ASC
+           LIMIT 1
+        ) i1 ON TRUE
+        WHERE ${where}
+        ORDER BY dis.fecha_subida DESC
+        LIMIT $3
+      `;
+      const r = await pool.query(q, params);
+      return r.rows;
+    };
+
+    let rows = await fetchBy({ byUserId: true });
+    if (rows.length === 0) rows = await fetchBy({ byUserId: false });
+
+    res.json(rows);
+  } catch (err) {
+    console.error('Error getMasDelAutor:', err);
+    res.status(500).json({ error: 'Error al obtener diseños del mismo autor' });
+  }
+};
+

@@ -14,11 +14,11 @@ const COOKIE_BASE = {
 };
 
 function signAccess(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "15m" });
+  return jwt.sign(payload, process.env.JWT_SECRET);
 }
 function signRefresh(payload) {
   // El JWT puede durar 30d, pero la cookie es de sesión (solo vive mientras el browser esté abierto)
-  return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: "30d" });
+  return jwt.sign(payload, process.env.JWT_SECRET);
 }
 
 // =========================

@@ -3,21 +3,23 @@ import { Router } from "express";
 import { verificarToken } from "../middlewares/validarToken.js";
 import {
   iniciarVinculacionURL,
-  iniciarVinculacion,   // opcional si querés el 302 desde backend
   callbackMP,
   desvincularMP,
   refrescarTokenMP,
+  crearPreferenceTest,
 } from "../controllers/mp.controller.js";
 
 const router = Router();
 
-// Flujo de vinculación
+// 🔗 Flujo de vinculación
 router.get("/vincular-url", verificarToken, iniciarVinculacionURL);
-router.get("/vincular", verificarToken, iniciarVinculacion); // opcional
 router.get("/callback", callbackMP);
 
-// Mantenimiento de vínculo
+// 🔧 Mantenimiento de vínculo
 router.post("/desvincular", verificarToken, desvincularMP);
 router.post("/refresh", verificarToken, refrescarTokenMP);
+
+// 🧪 Crear preferencia de prueba
+router.post("/test-preference", verificarToken, crearPreferenceTest);
 
 export default router;

@@ -1,292 +1,123 @@
-/* ===== HEADER FIJO Y RESPIRANDO ===== */
-.encabezado {
-  background-color: #171717;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  z-index: 120;                /* por encima de casi todo */
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: clamp(8px, 2vw, 24px);
-  padding: 12px clamp(16px, 3vw, 32px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
-  /* Evitá wrap para que no “salte” el contenido */
-  flex-wrap: nowrap;
+/* ===== Tokens mínimos ===== */
+:root{
+  --bg:#171717;
+  --text:#f5f5f5;
+  --muted:#888;
+  --primary:#2563EB;
+  --card:#212121;
+  --ring:rgba(37,99,235,.4);
 }
 
-/* Contenedor del logo: que no colapse ni se achique demasiado */
-.lado-izquierdo {
-  display: flex;
-  align-items: center;
-  min-width: 0;
-  flex: 0 0 auto;
+/* ===== Header base ===== */
+.encabezado{
+  position:fixed; inset:0 auto auto 0; width:100%;
+  background:var(--bg); color:var(--text); z-index:120;
+  display:flex; align-items:center; justify-content:space-between;
+  gap:clamp(8px,2vw,24px);
+  padding:12px clamp(16px,3vw,32px);
+  box-shadow:0 2px 8px rgba(0,0,0,.6);
+  flex-wrap:nowrap;
 }
 
-/* ===== LOGO VISIBLE Y DECENTE ===== */
-.Logoinicial {
-  display: block;
-  width: clamp(120px, 18vw, 100px); /* tamaño real, fluido */
-  height: auto;
-  object-fit: contain;
-  /* Chau padding gigante; si querés aire a la derecha, que sea lógico */
-  margin-right: clamp(8px, 2vw, 20px);
-  padding: 0;
+/* Izquierda: logo */
+.lado-izquierdo{ display:flex; align-items:center; min-width:0; flex:0 0 auto }
+.Logoinicial{
+  display:block; width: clamp(96px, 16vw, 140px); height:auto; object-fit:contain;
+  margin-right: clamp(8px,2vw,20px);
   filter: drop-shadow(0 2px 8px rgba(0,0,0,.35));
-  user-select: none;
+  user-select:none;
 }
 
-/* Si tenés un buscador DENTRO del header, que use el espacio central sin empujar al logo */
-.encabezado .buscador {
-  background-color: #212121;
-  border: 1px solid #444;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  color: white;
-  /* que respire pero no rompa el layout */
-  flex: 1 1 420px;          /* ocupa centro, puede achicarse */
-  max-width: 640px;
-  min-width: 200px;
-  margin: 0 auto;
+/* Centro: buscador */
+.buscador-header{
+  flex: 1 1 520px; max-width: 680px; min-width: 160px;
+  display:flex; align-items:center; justify-content:center; margin:0 auto;
+}
+.buscador-header input{
+  width:100%; padding:10px 14px; font-size:15px; color:var(--text);
+  background:#1f1f1f; border:1px solid transparent; border-radius:6px; outline:none;
+  transition: border .2s ease, box-shadow .2s ease;
+}
+.buscador-header input::placeholder{ color:var(--muted) }
+.buscador-header input:focus{
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--ring);
 }
 
-/* Bloque de acciones a la derecha */
-.contenido-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex: 0 0 auto;
+/* Derecha: acciones */
+.lado-derecho{ display:flex; align-items:center; gap:12px; flex:0 0 auto }
+.contenido-header{ display:flex; align-items:center; gap:12px }
+.acciones{ display:flex; gap:12px }
+.boton-principal{
+  padding:10px 16px; background:var(--primary); color:#fff; border:0; border-radius:6px; cursor:pointer; font-weight:500;
 }
 
-.acciones {
-  display: flex;
-  gap: 1rem;
-  flex-shrink: 0;
-  padding-right: 10px;
+/* Carrito */
+.btn-carrito{ background:none; border:none; cursor:pointer; position:relative }
+.btn-carrito:hover{ transform: scale(1.06) }
+.icono-carrito{ width:36px; height:32px; object-fit:contain }
+.btn-carrito img {width:50px; height:45px;}
+.cart-badge{
+  position:absolute; top:3px; right:2px; background:#ef4444; color:#fff;
+  font-size:11px; font-weight:700; padding:2px 6px; border-radius:50%;
+  line-height:1; min-width:18px; height:18px; display:grid; place-items:center; box-shadow:0 0 0 1px #000;
 }
 
-.boton-principal {
-  padding: 10px 16px;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: 500;
+/* Usuario */
+.usuario-dropdown{ position:relative; display:flex; flex-direction:column; align-items:flex-end }
+.usuario-mini{ display:flex; align-items:center; gap:8px; padding-right:6px; font-size:18px; cursor:pointer }
+.avatar-mini{ width:35px; height:35px; border-radius:50%; object-fit:cover }
+.flecha-abajo{ font-size:10px; color:#fff; transition: transform .2s ease }
+.flecha-abajo.rotada{ transform: rotate(180deg) }
+
+.menu-desplegable{
+  position:absolute; top:45px; right:0; background:#222; border:1px solid #444;
+  border-radius:8px; padding:10px; display:flex; flex-direction:column; min-width:200px;
+  box-shadow:0 12px 28px rgba(0,0,0,.45); z-index:130;
+}
+.menu-desplegable .apodo{ padding:6px 12px; color:#ddd }
+.menu-desplegable button{
+  background:none; border:none; color:#fff; text-align:left; padding:8px 12px; cursor:pointer; font-size:14px;
+}
+.menu-desplegable button:hover{ background:#333 }
+.menu-desplegable hr{ border:0; border-top:1px solid #555; margin:8px 0 }
+.btn-salir{ color:#ffb4b4 }
+
+/* ===== Hamburguesa ===== */
+.btn-hamburguesa{
+  display:none; background:none; border:none; font-size:28px; color:#fff; cursor:pointer; padding:6px 8px;
 }
 
-/* ===== MENÚ DESPLEGABLE ===== */
-.usuario-dropdown {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-.menu-desplegable {
-  position: absolute;
-  top: 45px;
-  right: 0;
-  background: #222;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  min-width: 200px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.45);
-  z-index: 130;             /* encima del header */
-}
-
-.menu-desplegable button {
-  background: none;
-  border: none;
-  color: white;
-  text-align: left;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
-}
-.menu-desplegable button:hover { background-color: #333; }
-.menu-desplegable hr {
-  border: none;
-  border-top: 1px solid #555;
-  margin: 8px 0;
-}
-
-/* Usuario mini */
-.usuario-mini {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 20px;
-  padding-right: 10px;
-}
-
-.flecha-abajo {
-  font-size: 10px;
-  color: #ffffff;
-  transition: transform 0.2s ease;
-  padding-right: 3px;
-}
-.flecha-abajo.rotada { transform: rotate(180deg); }
-.flecha-abajo:hover { color: #2563eb; }
-
-.btn-carrito {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: white;
-  position: relative;
-  padding: 8px;
-  transition: color 0.2s ease;
-}
-
-.btn-carrito:hover {
-  color: #2563eb;
-}
-
-.cart-badge {
-  position: absolute;
-  top: 2px;
-  right: 2px;
-  background-color: #ef4444; /* rojo */
-  color: white;
-  font-size: 11px;
-  font-weight: bold;
-  padding: 2px 6px;
-  border-radius: 50%;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  box-shadow: 0 0 0 1px black;
-}
-
-
-/* ===== RESPONSIVE SUAVE ===== */
-@media (max-width: 640px) {
-  .Logoinicial {
-    width: clamp(110px, 32vw, 160px);
-    margin-right: 8px;
+/* ===== Mobile first para lograr: logo izq + buscador centro ===== */
+@media (max-width: 900px){
+  /* Pasamos a GRID con 3 columnas: logo | buscador | acciones */
+  .encabezado{
+    display:grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-areas: "logo search actions";
+    padding: 10px 12px;
+    gap: 8px;
   }
-  .encabezado .buscador {
-    flex-basis: 280px; /* se achica con dignidad */
+  .lado-izquierdo{ grid-area: logo; justify-self: start }
+  .buscador-header{ grid-area: search; min-width: 0 } /* permite encogerse */
+  .lado-derecho{ grid-area: actions; justify-self: end; gap: 8px }
+
+  /* Mostrar hamburguesa y plegar contenido */
+  .btn-hamburguesa{ display:block }
+  .contenido-header{
+    display:none; position:absolute; top:100%; right:8px; left:8px;
+    background:#1c1c1c; border:1px solid #333; border-radius:10px; padding:10px;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);
   }
+  .contenido-header.abierto{ display:flex; flex-direction:column; align-items:center; gap:10px }
+
+  /* Tamaños más chicos */
+  .Logoinicial{ width: clamp(84px, 28vw, 120px); margin-right: 6px }
+  .icono-carrito{ width:32px; height:28px }
+  .acciones{ flex-wrap:wrap; justify-content:center; width:100% }
 }
 
-.buscador-header {
-  flex: 1 1 100%;
-  max-width: 500px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.buscador-header input {
-  width: 100%;
-  padding: 10px 14px;
-  font-size: 15px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background-color: #1f1f1f;
-  color: #f5f5f5;
-  outline: none;
-  transition: border 0.3s ease, box-shadow 0.3s ease;
-}
-
-.buscador-header input::placeholder {
-  color: #888;
-}
-
-.buscador-header input:focus {
-  border-color: #2563EB;
-  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
-}
-
-
-/* ===== HEADER RESPONSIVO MEJORADO ===== */
-@media (max-width: 900px) {
-  .encabezado {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
-  }
-
-  .lado-izquierdo {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .contenido-header {
-    justify-content: center;
-    width: 100%;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
-  .encabezado .buscador {
-    width: 100%;
-    max-width: 90vw;
-    margin: 0 auto;
-    flex: 1 1 auto;
-  }
-
-  .buscador-header {
-    max-width: 100%;
-    padding: 0 10px;
-  }
-}
-
-@media (max-width: 480px) {
-  .acciones {
-    flex-wrap: wrap;
-    justify-content: center;
-    width: 100%;
-    padding-right: 0;
-  }
-
-  .usuario-mini {
-    justify-content: center;
-    width: 100%;
-    padding-right: 0;
-  }
-}
-
-/* ===== BOTÓN HAMBURGUESA ===== */
-.btn-hamburguesa {
-  display: none;
-  background: none;
-  border: none;
-  font-size: 28px;
-  color: white;
-  cursor: pointer;
-  padding: 6px 12px;
-  z-index: 130;
-}
-
-@media (max-width: 900px) {
-  .btn-hamburguesa {
-    display: block;
-    position: absolute;
-    right: 16px;
-    top: 14px;
-  }
-
-  .contenido-header {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    display: none; /* oculto por defecto */
-    gap: 12px;
-  }
-
-  .contenido-header.abierto {
-    display: flex; /* se muestra si el menú está abierto */
-  }
+/* Aún más chico */
+@media (max-width: 480px){
+  .buscador-header input{ padding:9px 12px; font-size:14px }
 }

@@ -13,6 +13,7 @@ import cartRoutes from "./routes/cart.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
 import mpRoutes from "./routes/mp.routes.js";
 import { cloudinary } from "./lib/cloudinary.js";
+import categoriasRoutes from './routes/categorias.routes.js';
 
 const app = express();
 
@@ -30,7 +31,7 @@ app.use("/api/mp", mpWebhookRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
 app.use("/api/mp", mpRoutes);
-
+app.use('/api/categorias', categoriasRoutes);
 app.get("/api/debug/routes", (_req, res) => {
   const out = [];
   app._router.stack.forEach((m) => {

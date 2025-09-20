@@ -10,7 +10,7 @@ const {
   JWT_SECRET,
 } = process.env;
 
-const MP_AUTH_BASE = (process.env.MP_AUTH_BASE || "https://auth.mercadolibre.com/authorization").trim();
+const MP_AUTH_BASE = "https://auth.mercadopago.com.ar/authorization";
 const MP_API = "https://api.mercadopago.com";
 
 // ---------------------------------------------------------------------------
@@ -18,9 +18,6 @@ const MP_API = "https://api.mercadopago.com";
 // ---------------------------------------------------------------------------
 function signState(id_usuario) {
   return jwt.sign({ id_usuario }, JWT_SECRET, { expiresIn: "10m" });
-}
-function verifyState(state) {
-  return jwt.verify(state, JWT_SECRET);
 }
 
 async function mpTokenRequest(paramsObj) {
@@ -34,9 +31,8 @@ async function mpTokenRequest(paramsObj) {
   const text = await res.text();
 
   if (!res.ok) {
-    // Logs FULL del error para entender el motivo (redirect_uri, client, grant, etc.)
     const sent = Object.fromEntries([...body.entries()]);
-    if (sent.client_secret) sent.client_secret = "***"; // enmascaramos
+    if (sent.client_secret) sent.client_secret = "***";
     console.error("=== [MP][TOKEN-ERROR] ===============================");
     console.error("Status:", res.status);
     console.error("Params enviados:", sent);
@@ -45,99 +41,46 @@ async function mpTokenRequest(paramsObj) {
     throw new Error(`MP oauth/token ${res.status}: ${text}`);
   }
 
-  try {
-    return JSON.parse(text);
-  } catch {
-    console.error("=== [MP][TOKEN-ERROR] JSON parse ====================");
-    console.error("Respuesta cruda:", text);
-    console.error("====================================================");
-    throw new Error(`MP oauth/token JSON parse error: ${text}`);
-  }
+  return JSON.parse(text);
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/mp/vincular-url  (front pide URL y redirige)
+// GET /api/mp/vincular-url
 // ---------------------------------------------------------------------------
 export async function iniciarVinculacionURL(req, res) {
   const auth = req.user || req.usuario || {};
   const { id_usuario } = auth;
   if (!id_usuario) return res.status(401).json({ error: "No autenticado" });
 
-  const RAW_CLIENT_ID = (process.env.MP_CLIENT_ID || "").trim();
-  const RAW_REDIRECT  = (process.env.MP_REDIRECT_URI || "").trim();
-  const RAW_AUTH_BASE = (process.env.MP_AUTH_BASE || MP_AUTH_BASE).trim();
-
-  const EXPECTED_REDIRECT = "http://localhost:4000/api/mp/callback";
-  const cmpRedirect = RAW_REDIRECT === EXPECTED_REDIRECT;
-
-  const problems = [];
-  if (!RAW_CLIENT_ID) problems.push("MP_CLIENT_ID vacío");
-  if (!RAW_REDIRECT)  problems.push("MP_REDIRECT_URI vacío");
-  if (!cmpRedirect)   problems.push(`redirect_uri NO coincide con ${EXPECTED_REDIRECT}`);
-
-  console.log("=== [MP][AUTH-URL] =================================");
-  console.log("User ID:", id_usuario);
-  console.log("AUTH_BASE:", RAW_AUTH_BASE);
-  console.log("CLIENT_ID:", RAW_CLIENT_ID);
-  console.log("REDIRECT_URI:", RAW_REDIRECT, "cmp:", cmpRedirect);
-  console.log("ENV OK?:", problems.length === 0 ? "SI" : "NO");
-  if (problems.length) console.warn("PROBLEMAS:", problems);
-  console.log("====================================================");
-
-  if (problems.length) {
-    return res.status(500).json({ error: "Misconfig", problems });
-  }
-
   const state = signState(id_usuario);
 
   const url =
-    `${RAW_AUTH_BASE}?response_type=code` +
-    `&client_id=${encodeURIComponent(RAW_CLIENT_ID)}` +
-    `&redirect_uri=${encodeURIComponent(RAW_REDIRECT)}` +
+    `${MP_AUTH_BASE}?response_type=code` +
+    `&client_id=${encodeURIComponent(MP_CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(MP_REDIRECT_URI)}` +
     `&state=${encodeURIComponent(state)}`;
 
-  console.log("[MP][AUTH-URL] Final URL =>", url);
+  console.log("=== [MP][AUTH-URL] =================================");
+  console.log("User ID:", id_usuario);
+  console.log("CLIENT_ID:", MP_CLIENT_ID);
+  console.log("REDIRECT_URI:", MP_REDIRECT_URI);
+  console.log("Final URL =>", url);
+  console.log("====================================================");
+
   return res.json({ url });
 }
 
 // ---------------------------------------------------------------------------
-// GET /api/mp/vincular  (opcional: backend redirige con 302)
-// ---------------------------------------------------------------------------
-export async function iniciarVinculacion(req, res) {
-  try {
-    const auth = req.user || req.usuario || {};
-    const { id_usuario } = auth;
-    if (!id_usuario) return res.status(401).json({ error: "No autenticado" });
-
-    const state = signState(id_usuario);
-
-    const url =
-      `${MP_AUTH_BASE}` +
-      `?response_type=code` +
-      `&client_id=${encodeURIComponent(MP_CLIENT_ID)}` +
-      `&redirect_uri=${encodeURIComponent(MP_REDIRECT_URI)}` +
-      `&state=${encodeURIComponent(state)}`;
-
-    console.log("=== [MP][AUTH-REDIRECT] ============================");
-    console.log("User ID:", id_usuario);
-    console.log("302 =>", url);
-    console.log("====================================================");
-
-    return res.redirect(302, url);
-  } catch (err) {
-    console.error("[MP][AUTH-REDIRECT] exception:", err);
-    return res.status(500).json({ error: "No se pudo iniciar la vinculación" });
-  }
-}
-
-// ---------------------------------------------------------------------------
-// GET /api/mp/callback  (MP redirige con ?code=&state=)
-// Intercambia code -> tokens y guarda en `usuarios`
+// GET /api/mp/callback
 // ---------------------------------------------------------------------------
 export async function callbackMP(req, res) {
   try {
     const { code, state, error, error_description } = req.query;
 
+    console.log("=== [MP][CALLBACK] ===============================");
+    console.log("Query recibida:", req.query);
+
+    // ⚠️ Si Mercado Pago devuelve error en query
     if (error) {
       console.error("[MP][CB] error:", error, error_description);
       return res.send(`
@@ -151,12 +94,14 @@ export async function callbackMP(req, res) {
       `);
     }
 
-    // 🔑 Validar el state
+    // 🔑 Validar el state (para evitar CSRF)
     let id_usuario;
     try {
       const decoded = jwt.verify(state, process.env.JWT_SECRET);
       id_usuario = decoded?.id_usuario;
+      console.log("[MP][CALLBACK] State decodificado:", decoded);
     } catch (e) {
+      console.error("[MP][CALLBACK] State inválido:", e.message);
       return res.send(`
         <script>
           window.opener.postMessage(
@@ -168,6 +113,9 @@ export async function callbackMP(req, res) {
       `);
     }
 
+    console.log("[MP][CALLBACK] Usuario a vincular:", id_usuario);
+    console.log("[MP][CALLBACK] Intercambiando code por tokens...");
+
     // 🔄 Intercambiar code -> tokens
     const data = await mpTokenRequest({
       grant_type: "authorization_code",
@@ -175,6 +123,14 @@ export async function callbackMP(req, res) {
       client_secret: process.env.MP_CLIENT_SECRET,
       code,
       redirect_uri: process.env.MP_REDIRECT_URI,
+    });
+
+    console.log("[MP][CALLBACK] Tokens recibidos (sanitizado):", {
+      user_id: data.user_id,
+      scope: data.scope,
+      access_token: data.access_token ? "***" : null,
+      refresh_token: data.refresh_token ? "***" : null,
+      expires_in: data.expires_in,
     });
 
     // Guardar en DB
@@ -185,13 +141,32 @@ export async function callbackMP(req, res) {
     const expires_in = Number(data.expires_in || 0);
     const mp_token_expira = expires_in ? new Date(Date.now() + expires_in * 1000) : null;
 
-    await pool.query(
+    console.log("[MP][CALLBACK] Guardando en DB:", {
+      cuenta_pago: "mercadopago",
+      mp_user_id,
+      mp_access_token: mp_access_token ? "***" : null,
+      mp_refresh_token: mp_refresh_token ? "***" : null,
+      mp_token_scopes,
+      mp_token_expira,
+      id_usuario,
+    });
+
+    const upd = await pool.query(
       `UPDATE usuarios
        SET cuenta_pago=$1, mp_user_id=$2, mp_access_token=$3,
            mp_refresh_token=$4, mp_token_scopes=$5, mp_token_expira=$6
-       WHERE id_usuario=$7`,
+       WHERE id_usuario=$7
+       RETURNING id_usuario`,
       ["mercadopago", mp_user_id, mp_access_token, mp_refresh_token, mp_token_scopes, mp_token_expira, id_usuario]
     );
+
+    console.log("[MP][CALLBACK] UPDATE rowCount:", upd.rowCount);
+
+    if (upd.rowCount === 0) {
+      console.error("[MP][CALLBACK] ⚠️ No se actualizó ningún usuario.");
+    } else {
+      console.log("[MP][CALLBACK] ✅ Usuario vinculado correctamente.");
+    }
 
     // 👇 Enviamos mensaje al frontend y cerramos popup
     return res.send(`
@@ -208,7 +183,7 @@ export async function callbackMP(req, res) {
     return res.send(`
       <script>
         window.opener.postMessage(
-          { status: "error", source: "mercadopago", reason: "exception" },
+          { status: "error", source: "mercadopago", reason: "exception", detail: "${err.message}" },
           "${process.env.FRONTEND_URL}"
         );
         window.close();
@@ -218,7 +193,7 @@ export async function callbackMP(req, res) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/mp/desvincular  (limpia campos en `usuarios`)
+// POST /api/mp/desvincular
 // ---------------------------------------------------------------------------
 export async function desvincularMP(req, res) {
   try {
@@ -248,7 +223,7 @@ export async function desvincularMP(req, res) {
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/mp/refresh  (usa refresh_token para renovar access_token)
+// POST /api/mp/refresh
 // ---------------------------------------------------------------------------
 export async function refrescarTokenMP(req, res) {
   try {
@@ -309,5 +284,67 @@ export async function refrescarTokenMP(req, res) {
   } catch (err) {
     console.error("[MP][REFRESH] exception:", err);
     return res.status(500).json({ error: "No se pudo refrescar el token" });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/mp/test-preference
+// ---------------------------------------------------------------------------
+export async function crearPreferenceTest(req, res) {
+  try {
+    const auth = req.user || req.usuario || {};
+    const { id_usuario } = auth;
+    if (!id_usuario) return res.status(401).json({ error: "No autenticado" });
+
+    const q = await pool.query(
+      `SELECT mp_access_token FROM usuarios WHERE id_usuario=$1`,
+      [id_usuario]
+    );
+    if (!q.rowCount || !q.rows[0].mp_access_token) {
+      return res.status(400).json({ error: "Usuario no tiene MP vinculado" });
+    }
+    const accessToken = q.rows[0].mp_access_token;
+
+    const body = {
+      items: [
+        {
+          title: "Diseño 3D de prueba",
+          quantity: 1,
+          currency_id: "ARS",
+          unit_price: 1000,
+        },
+      ],
+      back_urls: {
+        success: `${FRONTEND_URL}/checkout/success`,
+        failure: `${FRONTEND_URL}/checkout/failure`,
+        pending: `${FRONTEND_URL}/checkout/pending`,
+      },
+      auto_return: "approved",
+    };
+
+    console.log("=== [MP][TEST-PREFERENCE] =====================");
+    console.log("AccessToken:", accessToken ? accessToken.slice(0,15) + "..." : "NULL");
+    console.log("Body:", JSON.stringify(body, null, 2));
+    console.log("===============================================");
+
+    const resp = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      console.error("[MP][TEST-PREFERENCE] error:", data);
+      return res.status(502).json({ error: "No se pudo crear preferencia", detail: data });
+    }
+
+    return res.json({ ok: true, init_point: data.init_point });
+  } catch (err) {
+    console.error("[MP][TEST-PREFERENCE] exception:", err);
+    return res.status(500).json({ error: "Error interno" });
   }
 }
