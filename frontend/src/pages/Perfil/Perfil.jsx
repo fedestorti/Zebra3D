@@ -1,7 +1,7 @@
-// src/pages/Perfil/Perfil.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 import API from '../../api';
 import { Rating } from 'react-simple-star-rating';
 import './Perfil.css';
@@ -18,6 +18,7 @@ export default function Perfil() {
   const { apodo } = useParams();
   const navigate = useNavigate();
   const { usuario } = useAuth();
+  const { sendDirect, setActive } = useChat();
 
   const [profile, setProfile] = useState(null);
   const [designs, setDesigns] = useState([]);
@@ -42,7 +43,12 @@ export default function Perfil() {
   const [ampliarOpen, setAmpliarOpen] = useState(false);
 
   // Bibliografía
-  const [refs, setRefs] = useState([]); // [{autores, anio, titulo, editorial, url}]
+  const [refs, setRefs] = useState([]);
+
+  // Modal Enviar Mensaje
+  const [msgOpen, setMsgOpen] = useState(false);
+  const [msgText, setMsgText] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -83,16 +89,16 @@ export default function Perfil() {
         }
       }
 
-
       try {
         const { data } = await API.get(`/usuarios/${apodo}/bibliografia`);
         if (Array.isArray(data) && data.length) {
           setRefs(data);
         } else {
+          // fallback
+          // eslint-disable-next-line no-undef
           perfil?.bibliografia && Array.isArray(perfil.bibliografia) && setRefs(perfil.bibliografia);
         }
-      } catch {
-      }
+      } catch {}
     }
 
     fetchData();
@@ -100,9 +106,7 @@ export default function Perfil() {
 
   // Limpia URL de preview al desmontar
   useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
   }, [previewUrl]);
 
   // Cerrar modales con ESC
@@ -111,6 +115,7 @@ export default function Perfil() {
       if (e.key === 'Escape') {
         setAmpliarOpen(false);
         setShowPreview(false);
+        setMsgOpen(false);
       }
     };
     document.addEventListener('keydown', onKey);
@@ -119,10 +124,10 @@ export default function Perfil() {
 
   // Bloquear scroll de fondo cuando hay modal abierto
   useEffect(() => {
-    const anyModalOpen = ampliarOpen || showPreview;
+    const anyModalOpen = ampliarOpen || showPreview || msgOpen;
     document.body.style.overflow = anyModalOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
-  }, [ampliarOpen, showPreview]);
+  }, [ampliarOpen, showPreview, msgOpen]);
 
   const isOwner =
     !!usuario &&
@@ -249,14 +254,27 @@ export default function Perfil() {
     }
   };
 
-  // Mensajes
-  const handleEnviarMensaje = () => {
+  // Enviar DM desde modal
+  async function handleEnviarDM() {
     if (!usuario) {
       alert('Debes iniciar sesión para enviar mensajes');
       return navigate('/login');
     }
-    navigate(`/mensajes?to=${encodeURIComponent(profile.apodo)}`);
-  };
+    const body = msgText.trim();
+    if (!body) return;
+    setSendingMsg(true);
+    try {
+      const id_conversacion = await sendDirect(profile.id_usuario, body);
+      if (id_conversacion) {
+        setActive(id_conversacion);
+        setMsgOpen(false);
+        setMsgText('');
+        navigate('/mensajes');
+      }
+    } finally {
+      setSendingMsg(false);
+    }
+  }
 
   if (!profile) return <div>Cargando...</div>;
 
@@ -264,7 +282,6 @@ export default function Perfil() {
     <div className="main-container">
       <div className="profile-header">
         <div className="profile-header2">
-          {/* Avatar: clic para ampliar */}
           <img
             src={profile.avatar_url}
             alt={`Avatar de ${profile.apodo}`}
@@ -285,7 +302,6 @@ export default function Perfil() {
             <div className="profile-top">
               <span className="profile-username">@{profile.apodo}</span>
 
-              {/* Visitante: seguir + mensaje */}
               {!isOwner && usuario && (
                 <>
                   <button
@@ -297,7 +313,13 @@ export default function Perfil() {
 
                   <button
                     className="profile-button secondary"
-                    onClick={handleEnviarMensaje}
+                    onClick={() => {
+                      if (!usuario) {
+                        alert('Debes iniciar sesión para enviar mensajes');
+                        return navigate('/login');
+                      }
+                      setMsgOpen(true);
+                    }}
                     title="Enviar mensaje directo"
                   >
                     Mensaje
@@ -316,7 +338,6 @@ export default function Perfil() {
                 />
               )}
 
-              {/* Dueño: editar */}
               {isOwner && (
                 <div className="owner-actions">
                   <button className="profile-button secondary" onClick={handlePickAvatar}>
@@ -407,7 +428,6 @@ export default function Perfil() {
         ))}
       </div>
 
-      {/* ===== Bibliografía (si hay referencias) ===== */}
       {refs.length > 0 && (
         <section className="refs" aria-labelledby="refs-title">
           <h3 id="refs-title" className="refs-title">Bibliografía</h3>
@@ -434,7 +454,6 @@ export default function Perfil() {
         </section>
       )}
 
-      {/* Modal de previsualización de subida */}
       {showPreview && (
         <div className="modal-backdrop" onClick={() => setShowPreview(false)}>
           <div className="modal" role="dialog" aria-modal="true" onClick={e => e.stopPropagation()}>
@@ -463,7 +482,6 @@ export default function Perfil() {
         </div>
       )}
 
-      {/* Modal ampliar_FotoPerfil */}
       {ampliarOpen && (
         <div className="ampliar-backdrop" onClick={() => setAmpliarOpen(false)}>
           <div
@@ -493,13 +511,63 @@ export default function Perfil() {
             <div className="ampliar-actions">
               {!isOwner && (
                 <BotonZebra
-                  onClick={handleEnviarMensaje}
+                  onClick={() => {
+                    if (!usuario) {
+                      alert('Debes iniciar sesión para enviar mensajes');
+                      return navigate('/login');
+                    }
+                    setAmpliarOpen(false);
+                    setMsgOpen(true);
+                  }}
                   texto="Enviar mensaje"
                   aria-label="Enviar mensaje a este usuario"
                 />
               )}
               <button className="btn-ghost" onClick={() => setAmpliarOpen(false)}>
                 Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {msgOpen && (
+        <div className="modal-backdrop" onClick={() => !sendingMsg && setMsgOpen(false)}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Enviar mensaje a ${profile.apodo}`}
+            onClick={e => e.stopPropagation()}
+          >
+            <h3 className="modal-title">Mensaje para {profile.apodo}</h3>
+
+            <div className="modal-body">
+              <textarea
+                rows={5}
+                value={msgText}
+                onChange={e => setMsgText(e.target.value)}
+                placeholder="Escribí tu mensaje…"
+                className="dm-textarea"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleEnviarDM();
+                  }
+                }}
+              />
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-ghost" onClick={() => setMsgOpen(false)} disabled={sendingMsg}>
+                Cancelar
+              </button>
+              <button
+                className="btn primary"
+                onClick={handleEnviarDM}
+                disabled={sendingMsg || !msgText.trim()}
+              >
+                {sendingMsg ? 'Enviando…' : 'Enviar'}
               </button>
             </div>
           </div>

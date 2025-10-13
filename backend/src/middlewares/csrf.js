@@ -1,22 +1,21 @@
-// src/middlewares/csrf.js
+//backend/src/middlewares/csrf.js
 import crypto from "crypto";
+import { IS_PROD } from "../config.js";
 
-export function sendCsrfCookie(_req, res, next) {
+export function sendCsrfToken(_req, res) {
   const token = crypto.randomBytes(24).toString("hex");
   res.cookie("csrf_token", token, {
-    httpOnly: false,                 // debe ser legible por JS
+    httpOnly: false,      // visible para JS
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: IS_PROD,
     path: "/",
   });
-  next();
+  res.json({ ok: true, token });
 }
 
 export function verifyCsrf(req, res, next) {
-  const cookie = req.cookies?.csrf_token;
-  const header = req.headers["x-csrf-token"];
-  if (!cookie || !header || cookie !== header) {
-    return res.status(403).json({ error: "CSRF token inválido" });
-  }
+  const c = req.cookies?.csrf_token;
+  const h = req.get("X-CSRF-Token");
+  if (!c || !h || c !== h) return res.status(403).json({ error: "CSRF token inválido" });
   next();
 }

@@ -1,30 +1,40 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import pool from "../db.js";
-import { cloudinary } from "../lib/cloudinary.js";
 import crypto from "crypto";
+import pool from "../db.js";
+import { IS_PROD, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET } from "../config.js";
 
-const isProd = process.env.NODE_ENV === "production";
-const COOKIE_BASE = {
+// Cookies: una sola fuente de verdad
+const COOKIE_ACCESS = {
+  httpOnly: true,      // access solo por cookie
+  sameSite: "lax",
+  secure: IS_PROD,
+  path: "/",           // mismo path para set/clear
+};
+const COOKIE_REFRESH = {
   httpOnly: true,
   sameSite: "lax",
-  secure: isProd,
+  secure: IS_PROD,
   path: "/",
-  // 👉 sin expires / maxAge => cookie de sesión (se borra al cerrar el navegador)
+};
+const COOKIE_CSRF = {
+  httpOnly: false,     // visible para JS
+  sameSite: "lax",
+  secure: IS_PROD,
+  path: "/",
 };
 
 function signAccess(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET);
+  return jwt.sign(payload, JWT_ACCESS_SECRET, { expiresIn: "120m" });
 }
 function signRefresh(payload) {
-  // El JWT puede durar 30d, pero la cookie es de sesión (solo vive mientras el browser esté abierto)
-  return jwt.sign(payload, process.env.JWT_SECRET);
+  return jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: "7d" });
 }
 
 // =========================
 // Registro
 // =========================
-export const register = async (req, res) => {
+export async function register(req, res) {
   const { apodo, nombre, apellido, email, contrasena, pais } = req.body;
   if (!apodo || !nombre || !apellido || !email || !contrasena || !pais) {
     return res.status(400).json({ error: "Todos los campos son obligatorios" });
@@ -43,118 +53,114 @@ export const register = async (req, res) => {
       [apodo, email]
     );
     if (existing.rowCount > 0) {
-      if (req.file?.filename) {
-        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "image" });
-      }
       return res.status(400).json({ error: "El apodo o email ya están registrados" });
     }
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(contrasena, salt);
+    const hashed = await bcrypt.hash(contrasena, salt);
 
-    const avatar_url = req.file
-      ? req.file.path
-      : "https://res.cloudinary.com/dortoxt8j/image/upload/v1756229764/LogoDefault/Logo/Logo.png.png";
+    const avatar_url =
+      req.file?.path ||
+      "https://res.cloudinary.com/dortoxt8j/image/upload/v1756229764/LogoDefault/Logo/Logo.png.png";
 
     const result = await pool.query(
       `INSERT INTO usuarios (apodo, nombre, apellido, email, contrasena, avatar_url, pais)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+       VALUES ($1,$2,$3,$4,$5,$6,$7)
        RETURNING id_usuario`,
-      [apodo, nombre, apellido, email, hashedPassword, avatar_url, pais]
+      [apodo, nombre, apellido, email, hashed, avatar_url, pais]
     );
-
-    await cloudinary.api.create_folder(`usuarios/${apodo}/disenos`);
 
     return res.status(201).json({
       message: "✅ Usuario registrado con éxito",
       id: result.rows[0].id_usuario,
     });
-  } catch (error) {
-    console.error("❌ Error al registrar usuario:", error);
+  } catch (err) {
+    console.error("❌ Error al registrar usuario:", err);
     return res.status(500).json({ error: "Error al registrar usuario" });
   }
-};
+}
 
 // =========================
-// Login (cookies de sesión)
+// Login (setea cookies de sesión + csrf)
 // =========================
-export const login = async (req, res) => {
+export async function login(req, res) {
   const { email, contrasena } = req.body;
 
   try {
-    const result = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]);
-    if (result.rows.length === 0) return res.status(401).json({ mensaje: 'Email no registrado' });
+    const q = await pool.query(`SELECT * FROM usuarios WHERE email = $1`, [email]);
+    if (!q.rowCount) return res.status(401).json({ mensaje: "Email no registrado" });
 
-    const u = result.rows[0];
+    const u = q.rows[0];
     const ok = await bcrypt.compare(contrasena, u.contrasena);
-    if (!ok) return res.status(401).json({ mensaje: 'Contraseña incorrecta' });
+    if (!ok) return res.status(401).json({ mensaje: "Contraseña incorrecta" });
 
-    const accessToken = signAccess({ id_usuario: u.id_usuario });
-    const refreshToken = signRefresh({ id_usuario: u.id_usuario });
+    const access  = signAccess({ id_usuario: u.id_usuario });
+    const refresh = signRefresh({ id_usuario: u.id_usuario });
 
-    // CSRF visible para JS
-    const csrfToken = crypto.randomBytes(32).toString("hex");
+    const csrf = crypto.randomBytes(32).toString("hex");
 
-    // Cookies de sesión (sin maxAge/expires)
-    res.cookie('access_token', accessToken, COOKIE_BASE);
-    res.cookie('refresh_token', refreshToken, COOKIE_BASE);
-    res.cookie('csrf_token', csrfToken, {
-      httpOnly: false,
-      sameSite: "lax",
-      secure: isProd,
-      path: "/",
-    });
+    res.cookie("access_token", access, COOKIE_ACCESS);
+    res.cookie("refresh_token", refresh, COOKIE_REFRESH);
+    res.cookie("csrf_token", csrf, COOKIE_CSRF);
 
-    return res.json({ ok: true });
-  } catch (error) {
-    console.error('❌ [LOGIN] error:', error.message);
-    return res.status(500).json({ mensaje: 'Error interno del servidor' });
-  }
-};
-
-// =========================
-// Refresh access token (usa cookie refresh)
-// =========================
-export const refreshAccessToken = async (req, res) => {
-  try {
-    const rt = req.cookies?.refresh_token;
-    if (!rt) return res.status(401).json({ error: "Sin refresh token" });
-
-    let decoded;
-    try {
-      decoded = jwt.verify(rt, process.env.JWT_SECRET);
-    } catch {
-      return res.status(401).json({ error: "Refresh inválido o expirado" });
-    }
-
-    const newAccess = signAccess({ id_usuario: decoded.id_usuario });
-    // Devolvé y también podés re-setear la cookie de access para comodidad
-    res.cookie('access_token', newAccess, COOKIE_BASE);
     return res.json({ ok: true });
   } catch (err) {
-    console.error("refreshAccessToken", err);
+    console.error("❌ [LOGIN]", err);
+    return res.status(500).json({ mensaje: "Error interno del servidor" });
+  }
+}
+
+// =========================
+export async function refresh(req, res) {
+  try {
+    const token = req.cookies?.refresh_token;
+    if (!token) return res.status(401).json({ error: "No refresh token" });
+
+    let payload;
+    try {
+      payload = jwt.verify(token, JWT_REFRESH_SECRET);
+    } catch {
+      return res.status(401).json({ error: "Refresh inválido" });
+    }
+
+    const access = signAccess({ id_usuario: payload.id_usuario });
+    res.cookie("access_token", access, COOKIE_ACCESS);
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("❌ [REFRESH]", err);
     return res.status(500).json({ error: "No se pudo refrescar el token" });
   }
-};
+}
 
 // =========================
-// Logout
+// Logout (borra cookies en TODOS los paths comunes)
 // =========================
-export const logout = async (_req, res) => {
-  const clearOpts = { path: "/", sameSite: "lax", secure: isProd };
-  res.clearCookie("access_token", clearOpts);
-  res.clearCookie("refresh_token", clearOpts);
-  res.clearCookie("csrf_token", clearOpts);
+export async function logout(_req, res) {
+  const baseHttpOnly = { httpOnly: true, sameSite: "lax", secure: IS_PROD };
+  const baseJs = { sameSite: "lax", secure: IS_PROD }; // para csrf_token
+  const paths = ["/", "/api", "/api/auth"];
+  const expired = { expires: new Date(0) };
+
+  for (const p of paths) {
+    res.clearCookie("access_token", { ...baseHttpOnly, path: p });
+    res.cookie("access_token", "", { ...baseHttpOnly, path: p, ...expired });
+
+    res.clearCookie("refresh_token", { ...baseHttpOnly, path: p });
+    res.cookie("refresh_token", "", { ...baseHttpOnly, path: p, ...expired });
+  }
+
+  res.clearCookie("csrf_token", { ...baseJs, path: "/" });
+  res.cookie("csrf_token", "", { ...baseJs, path: "/", ...expired });
+
   return res.status(204).end();
-};
+}
 
 // =========================
-// Perfil básico (/auth/perfil)
+// Perfil básico y extendido
 // =========================
-export const obtenerPerfil = async (req, res) => {
+export async function obtenerPerfil(req, res) {
   try {
-    const authUser = req.user || req.usuario || {};
-    const { id_usuario } = authUser;
+    const { id_usuario } = req.user || {};
     if (!id_usuario) return res.status(401).json({ mensaje: "No autenticado" });
 
     const q = await pool.query(
@@ -164,21 +170,16 @@ export const obtenerPerfil = async (req, res) => {
       [id_usuario]
     );
     if (!q.rowCount) return res.status(404).json({ mensaje: "Usuario no encontrado" });
-
     return res.json(q.rows[0]);
-  } catch (error) {
-    console.error("obtenerPerfil", error);
+  } catch (err) {
+    console.error("obtenerPerfil", err);
     return res.status(500).json({ mensaje: "Error del servidor" });
   }
-};
+}
 
-// =========================
-// Perfil extendido (/auth/me)
-// =========================
-export const getMyProfile = async (req, res) => {
+export async function getMyProfile(req, res) {
   try {
-    const authUser = req.user || req.usuario || {};
-    const { id_usuario } = authUser;
+    const { id_usuario } = req.user || {};
     if (!id_usuario) return res.status(401).json({ error: "No autenticado" });
 
     const q = await pool.query(
@@ -206,4 +207,6 @@ export const getMyProfile = async (req, res) => {
     console.error("getMyProfile", err);
     return res.status(500).json({ error: "Error interno del servidor" });
   }
-};
+}
+
+export { COOKIE_ACCESS, COOKIE_REFRESH, COOKIE_CSRF };

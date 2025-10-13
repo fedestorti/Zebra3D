@@ -1,6 +1,7 @@
-// backend/src/server.js
+// backend/src/index.js
 import "dotenv/config";
 import express from "express";
+import http from "http";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { PORT } from "./config.js";
@@ -12,18 +13,24 @@ import mpWebhookRoutes from "./routes/mp.webhook.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import checkoutRoutes from "./routes/checkout.routes.js";
 import mpRoutes from "./routes/mp.routes.js";
+import categoriasRoutes from "./routes/categorias.routes.js";
+import mensajesRoutes from "./routes/mensajes.routes.js";
+import descargasRoutes from "./routes/descargas.routes.js";
+
+import { initSocket } from "./lib/socket.js";
 import { cloudinary } from "./lib/cloudinary.js";
-import categoriasRoutes from './routes/categorias.routes.js';
 
 const app = express();
 
 app.use(cors({
   origin: "http://localhost:5173",
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization", "x-csrf-token"],
 }));
 app.use(express.json());
 app.use(cookieParser());
 
+// Rutas
 app.use("/api/auth", authRoutes);
 app.use("/api/disenos", disenosRoutes);
 app.use("/api/usuarios", usuariosRoutes);
@@ -31,45 +38,28 @@ app.use("/api/mp", mpWebhookRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/checkout", checkoutRoutes);
 app.use("/api/mp", mpRoutes);
-app.use('/api/categorias', categoriasRoutes);
-app.get("/api/debug/routes", (_req, res) => {
-  const out = [];
-  app._router.stack.forEach((m) => {
-    if (m.route?.path) {
-      out.push({
-        method: Object.keys(m.route.methods)[0].toUpperCase(),
-        path: m.route.path,
-      });
-    }
-    if (m.name === "router" && m.handle?.stack) {
-      m.handle.stack.forEach((h) => {
-        if (h.route?.path) {
-          out.push({
-            method: Object.keys(h.route.methods)[0].toUpperCase(),
-            path: h.route.path,
-          });
-        }
-      });
-    }
-  });
-  res.json(out);
-});
-
+app.use("/api/categorias", categoriasRoutes);
+app.use("/api/mensajes", mensajesRoutes);
+app.use("/api/descargas", descargasRoutes);
 app.get("/", (_req, res) => res.send("🚀 Backend Proyecto3D funcionando!"));
 
+// Cloudinary ping (opcional)
 cloudinary.api.ping((error, result) => {
-  if (error) {
-    console.error("❌ Error conectando a Cloudinary:", error);
-  } else {
-    console.log("✅ Conectado a Cloudinary:", result);
-  }
+  if (error) console.error("❌ Cloudinary:", error);
+  else console.log("✅ Cloudinary:", result);
 });
 
+// Error handler
 app.use((err, _req, res, _next) => {
   console.error("🔥 Error global:", err);
   res.status(500).json({ error: "Error inesperado del servidor" });
 });
 
-app.listen(PORT, () => {
+// HTTP server + Socket.IO
+const server = http.createServer(app);
+const io = initSocket(server, { origin: "http://localhost:5173" });
+app.set("io", io);
+
+server.listen(PORT, () => {
   console.log(`✅ Servidor backend escuchando en el puerto ${PORT}`);
 });

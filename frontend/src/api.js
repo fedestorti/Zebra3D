@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000/api",
-  withCredentials: true, // incluye cookies (access/refresh/csrf)
+  withCredentials: true,
 });
 
 // -------------------- utils --------------------
@@ -11,56 +11,49 @@ function getCookie(name) {
   const m = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return m ? decodeURIComponent(m[1]) : null;
 }
+function hasCookie(name) {
+  return document.cookie.split("; ").some(p => p.startsWith(name + "="));
+}
 
 export async function ensureCsrf() {
   if (!getCookie("csrf_token")) {
-    try {
-      await API.get("/auth/csrf"); 
-    } catch {
-      
-    }
+    try { await API.get("/auth/csrf"); } catch {}
   }
 }
 
 // -------------------- request interceptor --------------------
 API.interceptors.request.use((config) => {
-  // CSRF
   const csrf = getCookie("csrf_token");
-  if (csrf) {
-    // tu middleware lee req.headers["x-csrf-token"]
-    config.headers["x-csrf-token"] = csrf;
-  } else {
-    // si no hay csrf, podés opcionalmente pedirlo en caliente
-    // ojo con loops si lo hacés acá; por eso lo dejamos en ensureCsrf()
-  }
+  if (csrf) config.headers["X-CSRF-Token"] = csrf;
 
-  // JWT opcional (solo si realmente lo usás además de cookies)
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  } else {
-    delete config.headers.Authorization;
-  }
+  // Si alguna vez usaste bearer opcional:
+  const t = localStorage.getItem("token");
+  if (t) config.headers.Authorization = `Bearer ${t}`;
+  else delete config.headers.Authorization;
 
   return config;
 });
 
-// -------------------- response interceptor (auto-refresh) --------------------
+// -------------------- response interceptor --------------------
 let refreshing = null;
+const NO_RETRY_URLS = ["/auth/logout"]; // nunca intentes refresh para estas
 
 API.interceptors.response.use(
   (res) => res,
   async (error) => {
     const original = error.config;
 
-    // Si no hay respuesta o ya reintentamos, no hagas locuras
+    // No reintentar en rutas bloqueadas
+    if (original?.url && NO_RETRY_URLS.some(u => original.url.includes(u))) {
+      return Promise.reject(error);
+    }
+    // Sin response o ya reintentado: afuera
     if (!error.response || original?._retry) {
       return Promise.reject(error);
     }
 
-    // 403 por CSRF suele venir con cookie ausente o header mal
+    // 403 → conseguí CSRF y reintento UNA vez
     if (error.response.status === 403) {
-      // probamos obtener csrf y reintentar UNA vez
       try {
         await ensureCsrf();
         original._retry = true;
@@ -70,26 +63,25 @@ API.interceptors.response.use(
       }
     }
 
-    // 401: intentamos refresh (si backend usa refresh_token en cookie)
+    // 401 → solo intento refresh si HAY cookie refresh_token
     if (error.response.status === 401) {
+      if (!hasCookie("refresh_token")) {
+        // usuario no logueado todavía; no sigas spameando /refresh
+        return Promise.reject(error);
+      }
       try {
         if (!refreshing) {
+          await ensureCsrf(); // si /refresh está protegido por CSRF
           refreshing = API.post("/auth/refresh").finally(() => {
             refreshing = null;
           });
         }
         await refreshing;
-
-        // tras refrescar, aseguramos csrf por si cambió
-        await ensureCsrf();
-
         original._retry = true;
         return API(original);
       } catch {
-        // si el refresh falla, limpiamos y a login
         localStorage.removeItem("token");
-        // opcional: redirigir
-        // window.location.href = '/login';
+        delete API.defaults.headers.common["Authorization"];
         return Promise.reject(error);
       }
     }
@@ -100,7 +92,7 @@ API.interceptors.response.use(
 
 export default API;
 
-// ✅ helper seguro: devuelve perfil o null si no hay sesión
+// ✅ helper: devuelve perfil o null sin spam
 export async function obtenerPerfilUsuario() {
   try {
     const res = await API.get("/auth/me");
@@ -109,4 +101,15 @@ export async function obtenerPerfilUsuario() {
     if (err.response?.status === 401) return null;
     throw err;
   }
+}
+
+export async function fetchDescargas() {
+  const { data } = await API.get("/descargas");
+  return data;
+}
+
+// Genera link firmado de corta duración para un item
+export async function pedirLinkDescarga(id_item) {
+  const { data } = await API.post(`/descargas/${id_item}/link`);
+  return data; // { url, expiresAt }
 }

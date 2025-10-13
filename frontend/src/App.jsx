@@ -1,26 +1,23 @@
 // src/App.jsx
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Header from './components/Header/Header';
 
 function App() {
   const location = useLocation();
-  const navigate = useNavigate();
-
-  const isPrincipal = location.pathname === '/principal';
   const hideFooter = location.pathname === '/terminos';
 
   return (
     <div
       style={{
-        minHeight: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
+        minHeight: '100dvh',
+        display: 'grid',
+        gridTemplateRows: 'auto 1fr auto', // Header | Main | Footer
       }}
     >
-      <Header>
-      </Header>
+      <Header />
 
-      <main style={{ flex: 1 }}>
+      {/* clave: que el main NO haga overflow del viewport */}
+      <main style={{ minHeight: 0, overflow: 'hidden' }}>
         <Outlet />
       </main>
 
@@ -43,5 +40,4 @@ function App() {
     </div>
   );
 }
-
 export default App;

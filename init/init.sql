@@ -212,3 +212,103 @@ CREATE TABLE webhooks_mp_log (
 );
 CREATE INDEX ix_webhooks_processed ON webhooks_mp_log(processed);
 CREATE INDEX ix_webhooks_resource  ON webhooks_mp_log(resource_id);
+
+
+
+
+# =============================================
+# 1) SQL: Tablas para mensajería (PostgreSQL)
+# =============================================
+-- 01_mensajeria.sql
+
+
+-- Conversaciones (threads)
+CREATE TABLE IF NOT EXISTS conversaciones (
+id_conversacion SERIAL PRIMARY KEY,
+creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+actualizado_en TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+
+-- Participantes por conversación (2 o más)
+CREATE TABLE IF NOT EXISTS conversacion_participantes (
+id_conversacion INTEGER NOT NULL REFERENCES conversaciones(id_conversacion) ON DELETE CASCADE,
+id_usuario INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+ultimo_leido_id INTEGER, -- FK deferida a mensajes.id_mensaje
+PRIMARY KEY (id_conversacion, id_usuario)
+);
+
+
+-- Mensajes
+CREATE TABLE IF NOT EXISTS mensajes (
+id_mensaje SERIAL PRIMARY KEY,
+id_conversacion INTEGER NOT NULL REFERENCES conversaciones(id_conversacion) ON DELETE CASCADE,
+id_remitente INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+cuerpo TEXT NOT NULL,
+creado_en TIMESTAMP NOT NULL DEFAULT NOW(),
+editado_en TIMESTAMP,
+borrado BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+
+-- Índices útiles
+CREATE INDEX IF NOT EXISTS idx_mensajes_conversacion_fecha ON mensajes(id_conversacion, creado_en DESC);
+CREATE INDEX IF NOT EXISTS idx_mensajes_remitente ON mensajes(id_remitente);
+
+
+-- Trigger para actualizar "actualizado_en" de la conversación al llegar mensaje nuevo
+CREATE OR REPLACE FUNCTION set_conversacion_actualizado_en() RETURNS TRIGGER AS $$
+BEGIN
+UPDATE conversaciones SET actualizado_en = NOW() WHERE id_conversacion = NEW.id_conversacion;
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+DROP TRIGGER IF EXISTS trg_conversacion_touch ON mensajes;
+CREATE TRIGGER trg_conversacion_touch
+AFTER INSERT OR UPDATE ON mensajes
+FOR EACH ROW EXECUTE FUNCTION set_conversacion_actualizado_en();
+
+
+
+
+
+
+
+-- compras del usuario
+CREATE TABLE IF NOT EXISTS compras (
+  id_compra       BIGSERIAL PRIMARY KEY,
+  id_usuario      INTEGER NOT NULL REFERENCES usuarios(id_usuario) ON DELETE CASCADE,
+  total           NUMERIC(12,2) NOT NULL DEFAULT 0,
+  estado          TEXT NOT NULL CHECK (estado IN ('paid','refunded','canceled')),
+  fecha_compra    TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+-- ítems comprados (cada diseño dentro de una compra)
+CREATE TABLE IF NOT EXISTS compra_items (
+  id_item             BIGSERIAL PRIMARY KEY,
+  id_compra           BIGINT NOT NULL REFERENCES compras(id_compra) ON DELETE CASCADE,
+  id_diseno           INTEGER NOT NULL REFERENCES disenos(id_diseno) ON DELETE RESTRICT,
+  titulo_cache        TEXT NOT NULL,
+  precio_unitario     NUMERIC(12,2) NOT NULL DEFAULT 0,
+  -- Para descargar de Cloudinary de manera segura:
+  archivo_public_id   TEXT NOT NULL,   -- ej: "archivos_3d/usuarioX/mi_modelo_123"
+  archivo_formato     TEXT NOT NULL,   -- ej: "stl" o "obj"
+  portada_url         TEXT,            -- thumbnail/preview opcional
+  UNIQUE(id_compra, id_diseno)
+);
+
+-- auditoría de descargas (sirve para limitar y mirar abuso)
+CREATE TABLE IF NOT EXISTS descargas (
+  id_descarga     BIGSERIAL PRIMARY KEY,
+  id_item         BIGINT NOT NULL REFERENCES compra_items(id_item) ON DELETE CASCADE,
+  fecha           TIMESTAMP NOT NULL DEFAULT NOW(),
+  ip              INET,
+  user_agent      TEXT
+);
+
+-- Índices útiles
+CREATE INDEX IF NOT EXISTS idx_compras_usuario ON compras(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_items_compra ON compra_items(id_compra);
+CREATE INDEX IF NOT EXISTS idx_descargas_item ON descargas(id_item);
